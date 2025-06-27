@@ -18,7 +18,7 @@ Generate a pokemon.
 - `tid` (optional): The id of the original trainer. Default: Random
 - `sid` (optional): The id of the pokemon. Default: Random
 - `gender` (optional): The gender of the pokemon. Default: Random
-- `ball` (optional): The ball that the pokemon was caught in. Default: `pokeball`
+- `ball` (optional): The ball that the pokemon was caught in. Default: `Pokeball`
 - `nature` (optional): The nature of the pokemon. Default: Random
 - `ivattack` (optional): The IV of the pokemon's attack stat. Default: Random
 - `ivspattack` (optional): The IV of the pokemon's special attack stat. Default: Random
