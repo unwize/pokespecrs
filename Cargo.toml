@@ -3,4 +3,8 @@ name = "pokespecrs"
 version = "0.1.0"
 edition = "2024"
 
+[clap]
+about="Generate Pokemon from the command-line!"
+
 [dependencies]
+clap = { version = "4.5.40", features = ["color", "derive"] }
