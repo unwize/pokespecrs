@@ -1,21 +1,30 @@
 use::clap::Parser;
+use clap::Subcommand;
 
 #[derive(Parser, Debug)]
 #[command(name="PokeSpecRS")]
 #[command(version, about, long_about = None)]
-struct Args {
-    #[arg(short, long)]
-    species: String,
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
 
-    #[arg(short, long, default_value_t = 1)]
-    level: usize,
-    
-    nickname: Option<String>,
-    
-    #[arg(short, long, default_value_t = false)]
-    shiny: bool,
+// https://docs.rs/clap/latest/clap/_derive/_tutorial/index.html#subcommands
+#[derive(Subcommand, Debug)]
+enum Commands {
+    Generate {
+        #[arg(short, long)]
+        species: String,
 
+        #[arg(short, long, default_value_t = 1)]
+        level: usize,
+
+        nickname: Option<String>,
+
+        #[arg(short, long, default_value_t = false)]
+        shiny: bool,
+    }
 }
 fn main() {
-    let args = Args::parse();
+    
 }

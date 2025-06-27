@@ -32,3 +32,8 @@ Generate a pokemon.
 - `evspdefense` (optional): The EV of the pokemon's special defense stat. Default: Random
 - `evspeed` (optional): The EV of the pokemon's speed stat. Default: Random
 - `evhp` (optional): The EV of the pokemon's hp stat. Default: Random
+
+# Aknowlegments
+
+- [Rust-Cli Guide](https://rust-cli.github.io/book/index.html)
+- [CLAP](https://docs.rs/clap/latest/clap/index.html)
