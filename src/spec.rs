@@ -1,60 +1,67 @@
 use crate::enums::Gender;
 use std::collections::HashMap;
+use num::PrimInt;
 
-struct IVSpec {
-    map: HashMap<String, u8>
+struct StatSpread<Prim: PrimInt> {
+    map: HashMap<String, Prim>,  // Value of each stat
+    stat_limit: Prim,  // Max value allowed per state
+    spread_limit: usize,  // Max value of the sum of each state
 }
 
-impl IVSpec {
-    pub fn new() -> IVSpec {
-        let mut ivs = IVSpec { map: HashMap::new() };
-        ivs.map.insert(String::from("atk"), 0);
-        ivs.map.insert(String::from("spatk"), 0);
-        ivs.map.insert(String::from("def"), 0);
-        ivs.map.insert(String::from("spdef"), 0);
-        ivs.map.insert(String::from("spd"), 0);
-        ivs.map.insert(String::from("hp"), 0);
-        ivs
+impl<Prim: PrimInt> StatSpread<Prim> {
+    pub fn new(stat_limit: Prim, spread_limit: usize) -> StatSpread<Prim> {
+        let mut spread = StatSpread {
+            map: HashMap::from([
+                (String::from("atk"), Prim::zero()),
+                (String::from("def"), Prim::zero()),
+                (String::from("spatk"), Prim::zero()),
+                (String::from("spdef"), Prim::zero()),
+                (String::from("spd"), Prim::zero()),
+                (String::from("hp"), Prim::zero()),
+            ]
+        ), stat_limit, spread_limit };
+        spread
     }
 
-    pub fn atk(&self) -> u8 {
+    pub fn validate(&self) -> bool {
+        for key in self.map.keys() {
+            if *self.map.get(key).unwrap() > self.stat_limit || *self.map.get(key).unwrap() < Prim::zero() {
+                return false
+            }
+        }
+
+        true
+    }
+
+    pub fn atk(&self) -> Prim {
         self.map.get("atk").unwrap().clone()
     }
 
-    pub fn spatk(&self) -> u8 {
+    pub fn spatk(&self) -> Prim {
         self.map.get("spatk").unwrap().clone()
     }
 
-    pub fn def(&self) -> u8 {
+    pub fn def(&self) -> Prim {
         self.map.get("def").unwrap().clone()
     }
 
-    pub fn spdef(&self) -> u8 {
+    pub fn spdef(&self) -> Prim {
         self.map.get("spdef").unwrap().clone()
     }
 
-    pub fn spd(&self) -> u8 {
+    pub fn spd(&self) -> Prim {
         self.map.get("spd").unwrap().clone()
     }
 
-    pub fn hp(&self) -> u8 {
+    pub fn hp(&self) -> Prim {
         self.map.get("hp").unwrap().clone()
     }
-}
-
-struct EVSpec {
-    atk: u8,
-    spatk: u8,
-    def: u8,
-    spdef: u8,
-    hp: u8,
-    spd: u8
 }
 
 struct PokeSpec {
     species: String,
     ability: String,
-    level: u8,
+    level: u8,  // Max of 100
     nickname: Option<String>,
     shiny: bool,
     ot: String,
@@ -63,5 +70,36 @@ struct PokeSpec {
     gender: Gender,
     ball: String,
     nature: String,
+    ivs: StatSpread<u8>,  // Max of 31 per stat, no actual stat total
+    evs: StatSpread<u16>,  // Max of 252 per stat, with a total of 510
+}
 
+impl PokeSpec {
+    pub fn new(
+        species: String, ability: String, level: u8, nickname: Option<String>, shiny: bool,
+        ot: String, tid: usize, sid: usize, gender: Gender, ball: String, nature: String,
+        ivs: Vec<u8>, evs: Vec<u16>
+    ) -> PokeSpec {
+
+        let i = StatSpread::new(31, 31*6);
+
+
+        let e = StatSpread::new(252, 510);
+
+        PokeSpec {
+            species,
+            ability,
+            level,
+            nickname,
+            shiny,
+            ot,
+            tid,
+            sid,
+            gender,
+            ball,
+            nature,
+            ivs: i,
+            evs: e
+        }
+    }
 }
