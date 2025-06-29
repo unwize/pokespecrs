@@ -4,6 +4,6 @@ trait PokeDataSource {
     fn is_ability_valid(species: &str, ability: &str) -> bool;
 }
 
-fn validate_pokemon(pokemon: PokeSpec) {
+//fn validate_pokemon(pokemon: PokeSpec) {
 
-}
+//}
