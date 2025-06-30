@@ -20,38 +20,53 @@ impl StatSpread {
             sum_max: 0,
         }
     }
-    fn new(stat_max: u16, sum_max: u16, user_stats: Option<&HashMap<String, u16>>) -> Self {
-
-        let mut stats: HashMap<String, u16> = HashMap::new();
+    fn new(stat_max: u16, sum_max: u16, user_stats: HashMap<String, u16>) -> Self {
+        let mut available_stats: HashSet<String> = HashSet::from(STAT_NAMES.clone().map(|x| {x.to_string()}));
+        let mut _stats: HashMap<String, u16> = HashMap::new();
         let mut rng = rand::rng();
-        for stat in STAT_NAMES {
-            if user_stats.contains_key(stat) {
-                stats.insert(String::from(stat), *user_stats.get(stat).unwrap());
+        let mut sum: u16 = 0;
+
+        for stat in available_stats {
+            if user_stats.contains_key(&stat) {
+                let value = *user_stats.get(&stat).unwrap();
+                sum = sum + value;
+                _stats.insert(stat.clone(), value);
             } else {
-                stats.insert(String::from(stat), rng.random_range(0..stat_max + 1));
+                let value =  rng.random_range(0..min(stat_max, sum_max - sum) + 1);
+                sum = sum + value;
+                _stats.insert(stat.clone(), value);
             }
         }
 
         StatSpread {
-            stats,
+            stats: _stats,
             stat_max,
             sum_max,
         }
     }
 
-    fn from_ivs(stats: &HashMap<String, u16>) -> Self {
+    fn from_ivs(stats: Option<&HashMap<String, u16>>) -> Self {
+        let mut available_stats = HashSet::from(STAT_NAMES.clone());
         let mut _stats: HashMap<String, u16> = HashMap::new();
 
-        for (stat, value) in stats {
-            if STAT_NAMES.contains(&stat.as_str()) {
-                if *value > 31 || *value < 0 {
-                    // TODO: Handle invalid stat value
-                }
+        if stats.is_some() {
+            for (stat, value) in stats.unwrap() {
+                if STAT_NAMES.contains(&stat.as_str()) {
+                    if *value > 31 || *value < 0 {
+                        // TODO: Handle invalid stat value
+                    }
 
-                _stats.insert(stat.clone(), *value);
-            } else {
-                // TODO: Handle invalid stat name
+                    available_stats.remove(stat.as_str());
+                    _stats.insert(stat.clone(), *value);
+                } else {
+                    // TODO: Handle invalid stat name
+                }
             }
+        }
+
+        let mut rng = rand::rng();
+        for stat in available_stats {
+            _stats.insert(String::from(stat), rng.random_range(0..32));
         }
 
         StatSpread {
@@ -61,30 +76,32 @@ impl StatSpread {
         }
     }
 
-    fn from_evs(stats: &HashMap<String, u16>) -> Self {
+    fn from_evs(stats: Option<&HashMap<String, u16>>) -> Self {
         let mut available_stats = HashSet::from(STAT_NAMES.clone());
         let mut _stats: HashMap<String, u16> = HashMap::new();
         let mut sum: u16 = 0;
 
-        // Pull user-defined stat values out of the provided hashmap
-        for (stat, value) in stats {
-            if STAT_NAMES.contains(&stat.as_str()) {
+        if !stats.is_none() {
+            // Pull user-defined stat values out of the provided hashmap
+            for (stat, value) in stats.unwrap() {
+                if STAT_NAMES.contains(&stat.as_str()) {
 
-                // Remove the stat from the set of available stats
-                available_stats.remove(stat);
+                    // Remove the stat from the set of available stats
+                    available_stats.remove(stat as &str);
 
-                if sum + *value > 510 {
-                    // TODO: Handle max sum overflow
+                    if sum + *value > 510 {
+                        // TODO: Handle max sum overflow
+                    }
+
+                    if *value > 252 {
+                        // TODO: Handle max value overflow
+                    }
+                    sum = sum + *value;
+
+                    _stats.insert(String::from(stat), *value);
+                } else {
+                    // TODO: Handle invalid stat name
                 }
-
-                if *value > 252 {
-                    // TODO: Handle max value overflow
-                }
-                sum = sum + *value;
-
-                _stats.insert(String::from(stat), *value);
-            } else {
-                // TODO: Handle invalid stat name
             }
         }
 
@@ -139,8 +156,8 @@ impl PokeSpec {
             gender,
             ball,
             nature,
-            ivs: StatSpread::from_ivs(ivs.unwrap_or_default()),
-            evs: StatSpread::from_evs(evs.unwrap_or_default())
+            ivs: StatSpread::from_ivs(ivs),
+            evs: StatSpread::from_evs(evs)
         }
     }
 }
