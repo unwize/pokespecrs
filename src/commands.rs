@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use crate::enums::Gender;
 use crate::spec::PokeSpec;
+use std::collections::HashMap;
 
 /// A trait that defines the interface for executing command logic
 trait Command {

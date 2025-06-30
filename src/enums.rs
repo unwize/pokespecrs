@@ -2,5 +2,5 @@
 pub enum Gender {
     Male,
     Female,
-    Genderless
+    Genderless,
 }

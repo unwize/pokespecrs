@@ -1,13 +1,13 @@
+pub mod commands;
 pub mod enums;
 pub mod generate;
 pub mod spec;
-pub mod commands;
 
 use clap::Parser;
 use clap::Subcommand;
 
 #[derive(Parser, Debug)]
-#[command(name="PokeSpecRS")]
+#[command(name = "PokeSpecRS")]
 #[command(version, about, long_about = None)]
 struct Cli {
     #[command(subcommand)]
@@ -60,7 +60,7 @@ enum Commands {
         evhp: Option<u8>,
 
         moveset: Option<Vec<String>>,
-    }
+    },
 }
 
 fn print_type_of<T>(_: &T) {
