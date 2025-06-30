@@ -1,8 +1,9 @@
 pub mod enums;
-mod generate;
-mod spec;
+pub mod generate;
+pub mod spec;
+pub mod commands;
 
-use::clap::Parser;
+use clap::Parser;
 use clap::Subcommand;
 
 #[derive(Parser, Debug)]
@@ -38,7 +39,7 @@ enum Commands {
         #[arg(short, long)]
         gender: Option<String>,
 
-        #[arg(short, long)]
+        #[arg(short, long, default_value = "poke")]
         ball: Option<String>,
 
         #[arg(short, long)]
@@ -61,8 +62,14 @@ enum Commands {
         moveset: Option<Vec<String>>,
     }
 }
+
+fn print_type_of<T>(_: &T) {
+    println!("{}", std::any::type_name::<T>());
+}
+
 fn main() {
     let args = Cli::parse();
 
     println!("{:?}", args);
+    print_type_of(&args)
 }

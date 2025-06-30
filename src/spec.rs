@@ -1,4 +1,5 @@
-use std::collections::HashMap;
+use std::cmp::min;
+use std::collections::{HashMap, HashSet};
 use rand::Rng;
 use crate::enums::Gender;
 
@@ -31,19 +32,80 @@ impl StatSpread {
             }
         }
 
-
-
         StatSpread {
             stats,
             stat_max,
             sum_max,
         }
+    }
 
+    fn from_ivs(stats: &HashMap<String, u16>) -> Self {
+        let mut _stats: HashMap<String, u16> = HashMap::new();
+
+        for (stat, value) in stats {
+            if STAT_NAMES.contains(&stat.as_str()) {
+                if *value > 31 || *value < 0 {
+                    // TODO: Handle invalid stat value
+                }
+
+                _stats.insert(stat.clone(), *value);
+            } else {
+                // TODO: Handle invalid stat name
+            }
+        }
+
+        StatSpread {
+            stats: _stats,
+            stat_max: 31,
+            sum_max: 31 * 6,
+        }
+    }
+
+    fn from_evs(stats: &HashMap<String, u16>) -> Self {
+        let mut available_stats = HashSet::from(STAT_NAMES.clone());
+        let mut _stats: HashMap<String, u16> = HashMap::new();
+        let mut sum: u16 = 0;
+
+        // Pull user-defined stat values out of the provided hashmap
+        for (stat, value) in stats {
+            if STAT_NAMES.contains(&stat.as_str()) {
+
+                // Remove the stat from the set of available stats
+                available_stats.remove(stat);
+
+                if sum + *value > 510 {
+                    // TODO: Handle max sum overflow
+                }
+
+                if *value > 252 {
+                    // TODO: Handle max value overflow
+                }
+                sum = sum + *value;
+
+                _stats.insert(String::from(stat), *value);
+            } else {
+                // TODO: Handle invalid stat name
+            }
+        }
+
+        // For each stat that was not provided, generate a random value for it
+        let mut rng = rand::rng();
+        for stat in available_stats {
+            let value = rng.random_range(0..min(252, 510-sum) + 1);  // The stat's value has a max possible value of 252. The value may also not excede a stat sum total of 510.
+            _stats.insert(String::from(stat), value);
+            sum = sum + value;
+        }
+
+        StatSpread {
+            stats: _stats,
+            stat_max: 252,
+            sum_max: 510,
+        }
     }
 }
 
 
-struct PokeSpec {
+pub struct PokeSpec {
     species: String,
     ability: String,
     level: u8,  // Max of 100
@@ -63,7 +125,7 @@ impl PokeSpec {
     pub fn new(
         species: String, ability: String, level: u8, nickname: Option<String>, shiny: bool,
         ot: String, tid: usize, sid: usize, gender: Gender, ball: String, nature: String,
-        ivs: Option<&HashMap<String, u16>>, evs: &[u16]
+        ivs: Option<&HashMap<String, u16>>, evs: Option<&HashMap<String, u16>>
     ) -> PokeSpec {
         PokeSpec {
             species,
@@ -77,8 +139,8 @@ impl PokeSpec {
             gender,
             ball,
             nature,
-            ivs: StatSpread::from(ivs),
-            evs: StatSpread::from(evs)
+            ivs: StatSpread::from_ivs(ivs.unwrap_or_default()),
+            evs: StatSpread::from_evs(evs.unwrap_or_default())
         }
     }
 }
