@@ -21,7 +21,7 @@ impl StatSpread {
         }
     }
     fn new(stat_max: u16, sum_max: u16, user_stats: HashMap<String, u16>) -> Self {
-        let mut available_stats: HashSet<String> = HashSet::from(STAT_NAMES.clone().map(|x| {x.to_string()}));
+        let available_stats: HashSet<String> = HashSet::from(STAT_NAMES.clone().map(|x| {x.to_string()}));
         let mut _stats: HashMap<String, u16> = HashMap::new();
         let mut rng = rand::rng();
         let mut sum: u16 = 0;
@@ -52,12 +52,12 @@ impl StatSpread {
         if stats.is_some() {
             for (stat, value) in stats.unwrap() {
                 if STAT_NAMES.contains(&stat.as_str()) {
-                    if *value > 31 || *value < 0 {
+                    if value > 31 || value < 0 {
                         // TODO: Handle invalid stat value
                     }
 
                     available_stats.remove(stat.as_str());
-                    _stats.insert(stat.clone(), *value);
+                    _stats.insert(stat.clone(), value);
                 } else {
                     // TODO: Handle invalid stat name
                 }
@@ -89,16 +89,16 @@ impl StatSpread {
                     // Remove the stat from the set of available stats
                     available_stats.remove(stat.as_str());
 
-                    if sum + *value > 510 {
+                    if sum + value > 510 {
                         // TODO: Handle max sum overflow
                     }
 
-                    if *value > 252 {
+                    if value > 252 {
                         // TODO: Handle max value overflow
                     }
-                    sum = sum + *value;
+                    sum = sum + value;
 
-                    _stats.insert(String::from(stat), *value);
+                    _stats.insert(String::from(stat), value);
                 } else {
                     // TODO: Handle invalid stat name
                 }
