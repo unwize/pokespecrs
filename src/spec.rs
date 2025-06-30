@@ -45,7 +45,7 @@ impl StatSpread {
         }
     }
 
-    fn from_ivs(stats: Option<&HashMap<String, u16>>) -> Self {
+    fn from_ivs(stats: Option<HashMap<String, u16>>) -> Self {
         let mut available_stats = HashSet::from(STAT_NAMES.clone());
         let mut _stats: HashMap<String, u16> = HashMap::new();
 
@@ -76,7 +76,7 @@ impl StatSpread {
         }
     }
 
-    fn from_evs(stats: Option<&HashMap<String, u16>>) -> Self {
+    fn from_evs(stats: Option<HashMap<String, u16>>) -> Self {
         let mut available_stats = HashSet::from(STAT_NAMES.clone());
         let mut _stats: HashMap<String, u16> = HashMap::new();
         let mut sum: u16 = 0;
@@ -87,7 +87,7 @@ impl StatSpread {
                 if STAT_NAMES.contains(&stat.as_str()) {
 
                     // Remove the stat from the set of available stats
-                    available_stats.remove(stat as &str);
+                    available_stats.remove(stat.as_str());
 
                     if sum + *value > 510 {
                         // TODO: Handle max sum overflow
@@ -142,7 +142,7 @@ impl PokeSpec {
     pub fn new(
         species: String, ability: String, level: u8, nickname: Option<String>, shiny: bool,
         ot: String, tid: usize, sid: usize, gender: Gender, ball: String, nature: String,
-        ivs: Option<&HashMap<String, u16>>, evs: Option<&HashMap<String, u16>>
+        ivs: Option<HashMap<String, u16>>, evs: Option<HashMap<String, u16>>
     ) -> PokeSpec {
         PokeSpec {
             species,
