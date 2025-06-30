@@ -1,6 +1,10 @@
+use std::cmp::max;
 use crate::enums::Gender;
 use std::collections::HashMap;
+use std::process::exit;
 use num::PrimInt;
+use log::log;
+use rustemon::model::pokemon::Stat;
 
 struct StatSpread<Prim: PrimInt> {
     map: HashMap<String, Prim>,  // Value of each stat
@@ -9,8 +13,8 @@ struct StatSpread<Prim: PrimInt> {
 }
 
 impl<Prim: PrimInt> StatSpread<Prim> {
-    pub fn new(stat_limit: Prim, spread_limit: usize) -> StatSpread<Prim> {
-        let mut spread = StatSpread {
+    pub fn new(stat_limit: Prim, spread_limit: usize) -> Self {
+        let spread = StatSpread {
             map: HashMap::from([
                 (String::from("atk"), Prim::zero()),
                 (String::from("def"), Prim::zero()),
@@ -58,6 +62,42 @@ impl<Prim: PrimInt> StatSpread<Prim> {
     }
 }
 
+impl StatSpread<u8> {
+
+    /// Create a new IV Stat struct from a list of u8's.
+    ///
+    /// # Examples
+    /// 
+    /// ```
+    /// let ivs = StatSpread::from(&[31, 25, 13, 22, 1, 16]
+    /// assert_eq!(ivs.atk(), 31)
+    /// assert_eq!(ivs.def(), 25)
+    /// assert_eq!(ivs.spatk(), 13)
+    /// assert_eq!(ivs.spdef(), 22)
+    /// assert_eq!(ivs.spd(), 1)
+    /// assert_eq!(ivs.hp(), 16)
+    /// ```
+    pub fn from(stats: &[u8]) -> Self {
+        if stats.len() != 6 {
+            StatSpread {
+                map: HashMap::from([
+                    (String::from("atk"), stats[0]),
+                    (String::from("def"), stats[1]),
+                    (String::from("spatk"), stats[2]),
+                    (String::from("spdef"), stats[3]),
+                    (String::from("spd"), stats[4]),
+                    (String::from("hp"), stats[5])
+                ]),
+                stat_limit: 31,
+                spread_limit: 31 * 6,
+            }
+        } else {
+            println!("Stat spread must be created from a slice of length 6. Got {} instead", stats.len());
+            exit(-1)
+        }
+    }
+}
+
 struct PokeSpec {
     species: String,
     ability: String,
@@ -78,14 +118,8 @@ impl PokeSpec {
     pub fn new(
         species: String, ability: String, level: u8, nickname: Option<String>, shiny: bool,
         ot: String, tid: usize, sid: usize, gender: Gender, ball: String, nature: String,
-        ivs: Vec<u8>, evs: Vec<u16>
+        ivs: &[u8], evs: &[u16]
     ) -> PokeSpec {
-
-        let i = StatSpread::new(31, 31*6);
-
-
-        let e = StatSpread::new(252, 510);
-
         PokeSpec {
             species,
             ability,
@@ -98,8 +132,8 @@ impl PokeSpec {
             gender,
             ball,
             nature,
-            ivs: i,
-            evs: e
+            ivs: StatSpread::from(ivs),
+            evs: StatSpread::from(evs)
         }
     }
 }
