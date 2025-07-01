@@ -1,8 +1,9 @@
-pub mod commands;
+pub mod command_logic;
 pub mod enums;
 pub mod generate;
 pub mod spec;
 
+use crate::command_logic::CommandLogic;
 use clap::Parser;
 use clap::Subcommand;
 
@@ -16,7 +17,7 @@ struct Cli {
 
 // https://docs.rs/clap/latest/clap/_derive/_tutorial/index.html#subcommands
 #[derive(Subcommand, Debug)]
-enum Commands {
+pub enum Commands {
     Generate {
         species: String,
 
@@ -24,7 +25,7 @@ enum Commands {
         ability: Option<String>,
 
         #[arg(short, long, default_value_t = 1)]
-        level: usize,
+        level: u8,
 
         nickname: Option<String>,
 
@@ -45,19 +46,19 @@ enum Commands {
         #[arg(short, long)]
         nature: Option<String>,
 
-        ivatk: Option<u8>,
-        ivspatk: Option<u8>,
-        ivdef: Option<u8>,
-        ivspdef: Option<u8>,
-        ivspd: Option<u8>,
-        ivhp: Option<u8>,
+        ivatk: Option<u16>,
+        ivspatk: Option<u16>,
+        ivdef: Option<u16>,
+        ivspdef: Option<u16>,
+        ivspd: Option<u16>,
+        ivhp: Option<u16>,
 
-        evatk: Option<u8>,
-        evspatk: Option<u8>,
-        evdef: Option<u8>,
-        evspdef: Option<u8>,
-        evspd: Option<u8>,
-        evhp: Option<u8>,
+        evatk: Option<u16>,
+        evspatk: Option<u16>,
+        evdef: Option<u16>,
+        evspdef: Option<u16>,
+        evspd: Option<u16>,
+        evhp: Option<u16>,
 
         moveset: Option<Vec<String>>,
     },
@@ -70,6 +71,11 @@ fn print_type_of<T>(_: &T) {
 fn main() {
     let args = Cli::parse();
 
-    println!("{:?}", args);
-    print_type_of(&args)
+    println!("{:?}", args.command);
+
+    match &args.command {
+        Commands::Generate { .. } => {
+            command_logic::Generate.execute(args.command);
+        }
+    }
 }
