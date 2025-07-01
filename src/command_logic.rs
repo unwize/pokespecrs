@@ -1,8 +1,8 @@
-use std::collections::HashMap;
-use rand::{rng, Rng};
-use crate::Commands;
 use crate::enums::Gender;
 use crate::spec::PokeSpec;
+use crate::{Commands, spec};
+use rand::{Rng, rng};
+use std::collections::HashMap;
 
 /// A trait that defines the interface for executing command logic
 pub trait CommandLogic {
@@ -63,37 +63,67 @@ impl CommandLogic for Generate {
                 moveset,
             } => {
                 let mut ivs: HashMap<String, u16> = HashMap::new();
-                if ivatk.is_some() {ivs.insert("atk".to_string(), ivatk.unwrap());}
-                if ivdef.is_some() {ivs.insert("def".to_string(), ivdef.unwrap());}
-                if ivspatk.is_some() {ivs.insert("spatk".to_string(), ivspatk.unwrap());}
-                if ivspdef.is_some() {ivs.insert("spdef".to_string(), ivspdef.unwrap());}
-                if ivspd.is_some() {ivs.insert("spd".to_string(), ivspd.unwrap());}
-                if ivhp.is_some() {ivs.insert("hp".to_string(), ivhp.unwrap());}
-                
+                if ivatk.is_some() {
+                    ivs.insert("atk".to_string(), ivatk.unwrap());
+                }
+                if ivdef.is_some() {
+                    ivs.insert("def".to_string(), ivdef.unwrap());
+                }
+                if ivspatk.is_some() {
+                    ivs.insert("spatk".to_string(), ivspatk.unwrap());
+                }
+                if ivspdef.is_some() {
+                    ivs.insert("spdef".to_string(), ivspdef.unwrap());
+                }
+                if ivspd.is_some() {
+                    ivs.insert("spd".to_string(), ivspd.unwrap());
+                }
+                if ivhp.is_some() {
+                    ivs.insert("hp".to_string(), ivhp.unwrap());
+                }
+
                 let mut evs: HashMap<String, u16> = HashMap::new();
-                if evatk.is_some() {evs.insert("atk".to_string(), evatk.unwrap());}
-                if evdef.is_some() {evs.insert("def".to_string(), evdef.unwrap());}
-                if evspatk.is_some() {evs.insert("spatk".to_string(), evspatk.unwrap());}
-                if evspdef.is_some() {evs.insert("spdef".to_string(), evspdef.unwrap());}
-                if evspd.is_some() {evs.insert("spd".to_string(), evspd.unwrap());}
-                if evhp.is_some() {evs.insert("hp".to_string(), evhp.unwrap());}
-                
+                if evatk.is_some() {
+                    evs.insert("atk".to_string(), evatk.unwrap());
+                }
+                if evdef.is_some() {
+                    evs.insert("def".to_string(), evdef.unwrap());
+                }
+                if evspatk.is_some() {
+                    evs.insert("spatk".to_string(), evspatk.unwrap());
+                }
+                if evspdef.is_some() {
+                    evs.insert("spdef".to_string(), evspdef.unwrap());
+                }
+                if evspd.is_some() {
+                    evs.insert("spd".to_string(), evspd.unwrap());
+                }
+                if evhp.is_some() {
+                    evs.insert("hp".to_string(), evhp.unwrap());
+                }
+
                 let mut rng = rng();
                 let spec = PokeSpec::new(
                     species.clone(),
                     "".to_string(),
                     *level,
-                    None, 
+                    None,
                     *shiny,
                     ot.clone(),
                     tid.unwrap_or(rng.random_range(10000..100000)),
                     sid.unwrap_or(rng.random_range(10000..100000)),
                     Gender::Male,
-                    "".to_string(),
-                    "".to_string(),
+                    ball.clone().unwrap(),
+                    if nature.is_some() {
+                        nature.clone().unwrap()
+                    } else {
+                        spec::NATURES[rng.random_range(0..spec::NATURES.len())].to_string()
+                    },
                     Some(ivs),
                     Some(evs),
                 );
+
+                println!("{}", spec);
             }
         }
     }

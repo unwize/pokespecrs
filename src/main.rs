@@ -1,5 +1,6 @@
 pub mod command_logic;
 pub mod enums;
+mod errors;
 pub mod generate;
 pub mod spec;
 
@@ -40,7 +41,7 @@ pub enum Commands {
         #[arg(short, long)]
         gender: Option<String>,
 
-        #[arg(short, long, default_value = "poke")]
+        #[arg(short, long, default_value = Some("poke"))]
         ball: Option<String>,
 
         #[arg(short, long)]

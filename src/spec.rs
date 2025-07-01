@@ -2,8 +2,15 @@ use crate::enums::Gender;
 use rand::Rng;
 use std::cmp::min;
 use std::collections::{HashMap, HashSet};
+use std::fmt::{Display, Formatter};
+use std::process::exit;
 
 static STAT_NAMES: [&str; 6] = ["atk", "def", "spatk", "spdef", "spd", "hp"];
+pub static NATURES: [&str; 25] = [
+    "Hardy", "Lonely", "Adamant", "Naughty", "Brave", "Bold", "Docile", "Impish", "Lax", "Relaxed",
+    "Modest", "Mild", "Bashful", "Rash", "Quiet", "Calm", "Gentle", "Careful", "Quirky", "Sassy",
+    "Timid", "Hasty", "Jolly", "Naive", "Serious",
+];
 
 struct StatSpread {
     stats: HashMap<String, u16>,
@@ -53,13 +60,15 @@ impl StatSpread {
             for (stat, value) in stats.unwrap() {
                 if STAT_NAMES.contains(&stat.as_str()) {
                     if value > 31 || value < 0 {
-                        // TODO: Handle invalid stat value
+                        println!("IV {} is out of bounds. Must be between 1 and 31!", &stat);
+                        exit(-1)
                     }
 
                     available_stats.remove(stat.as_str());
                     _stats.insert(stat.clone(), value);
                 } else {
-                    // TODO: Handle invalid stat name
+                    println!("{} is not a known IV!", &stat);
+                    exit(-1)
                 }
             }
         }
@@ -89,17 +98,20 @@ impl StatSpread {
                     available_stats.remove(stat.as_str());
 
                     if sum + value > 510 {
-                        // TODO: Handle max sum overflow
+                        println!("Invalid EV configuration: More than a sum total of 510 EVs!");
+                        exit(-1)
                     }
 
-                    if value > 252 {
-                        // TODO: Handle max value overflow
+                    if value > 252 || value < 0 {
+                        println!("Invalid EV configuration: EV {stat} is not between 1 and 252!");
+                        exit(-1)
                     }
                     sum = sum + value;
 
                     _stats.insert(String::from(stat), value);
                 } else {
-                    // TODO: Handle invalid stat name
+                    println!("{} is not a known EV!", &stat);
+                    exit(-1)
                 }
             }
         }
@@ -167,5 +179,11 @@ impl PokeSpec {
             ivs: StatSpread::from_ivs(ivs),
             evs: StatSpread::from_evs(evs),
         }
+    }
+}
+
+impl Display for PokeSpec {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "[{}] {}", self.level, self.species)
     }
 }
