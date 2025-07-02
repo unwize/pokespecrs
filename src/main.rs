@@ -1,3 +1,4 @@
+mod api;
 pub mod command_logic;
 mod console;
 pub mod enums;
@@ -7,6 +8,9 @@ pub mod spec;
 use crate::command_logic::CommandLogic;
 use clap::Parser;
 use clap::Subcommand;
+
+#[macro_use]
+extern crate num_derive;
 
 #[derive(Parser, Debug)]
 #[command(name = "PokeSpecRS")]
@@ -78,6 +82,8 @@ pub enum Commands {
         evhp: Option<u16>,
         #[arg(long)]
         moveset: Option<Vec<String>>,
+        #[arg(long = "gen")]
+        generation: Option<u8>,
     },
 }
 

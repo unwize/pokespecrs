@@ -200,7 +200,7 @@ impl Display for PokeSpec {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "[{}] ({}), lvl: {} | IVs: {} | EVs: {} | {} |",
+            "[{}] ({}), lvl: {} | {} | IVs: {} | EVs: {} | {} |",
             self.species,
             if self.nickname.is_some() {
                 self.nickname.clone().unwrap()
@@ -208,6 +208,7 @@ impl Display for PokeSpec {
                 self.species.clone()
             },
             self.level,
+            self.ability,
             self.ivs,
             self.evs,
             self.nature

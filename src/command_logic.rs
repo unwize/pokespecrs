@@ -4,6 +4,7 @@ use crate::spec::PokeSpec;
 use crate::{Commands, spec};
 use rand::{Rng, rng};
 use std::collections::HashMap;
+use crate::api::get_pokemon;
 
 /// A trait that defines the interface for executing command logic
 pub trait CommandLogic {
@@ -62,6 +63,7 @@ impl CommandLogic for Generate {
                 evspd,
                 evhp,
                 moveset,
+                generation,
             } => {
                 let mut ivs: HashMap<String, u16> = HashMap::new();
                 if ivatk.is_some() {
@@ -124,6 +126,7 @@ impl CommandLogic for Generate {
                     Some(evs),
                 );
 
+                get_pokemon(&species);
                 success(format!("{spec}").as_str())
             }
         }
