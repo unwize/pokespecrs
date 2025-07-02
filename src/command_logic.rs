@@ -1,10 +1,12 @@
-use crate::console::success;
+use crate::api::{get_pokemon, get_pokemon_moves};
+use crate::console::{info, success};
 use crate::enums::Gender;
 use crate::spec::PokeSpec;
 use crate::{Commands, spec};
 use rand::{Rng, rng};
 use std::collections::HashMap;
-use crate::api::get_pokemon;
+use itertools::Itertools;
+use log::info;
 
 /// A trait that defines the interface for executing command logic
 pub trait CommandLogic {
@@ -126,7 +128,8 @@ impl CommandLogic for Generate {
                     Some(evs),
                 );
 
-                get_pokemon(&species);
+                let moves = get_pokemon_moves(&get_pokemon(&species));
+                info(&format!("{}", moves.iter().format(",")));
                 success(format!("{spec}").as_str())
             }
         }
