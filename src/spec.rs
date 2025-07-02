@@ -116,12 +116,9 @@ impl StatSpread {
             }
         }
 
-        // For each stat that was not provided, generate a random value for it
-        let mut rng = rand::rng();
+        // For each stat that was not provided, set to zero
         for stat in available_stats {
-            let value = rng.random_range(0..min(252, 510 - sum) + 1); // The stat's value has a max possible value of 252. The value may also not excede a stat sum total of 510.
-            _stats.insert(String::from(stat), value);
-            sum = sum + value;
+            _stats.insert(String::from(stat), 0);
         }
 
         StatSpread {
@@ -129,6 +126,21 @@ impl StatSpread {
             stat_max: 252,
             sum_max: 510,
         }
+    }
+}
+
+impl Display for StatSpread {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "atk: {}, def: {}, spatk: {}, spdef {}, spd: {}, hp: {}",
+            self.stats["atk"],
+            self.stats["def"],
+            self.stats["spatk"],
+            self.stats["spdef"],
+            self.stats["spd"],
+            self.stats["hp"]
+        )
     }
 }
 
@@ -184,6 +196,6 @@ impl PokeSpec {
 
 impl Display for PokeSpec {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[{}] {}", self.level, self.species)
+        write!(f, "[{}] {} | ivs: {} | evs: {}", self.level, self.species, self.ivs, self.evs)
     }
 }
