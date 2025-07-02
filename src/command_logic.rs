@@ -1,3 +1,4 @@
+use crate::console::success;
 use crate::enums::Gender;
 use crate::spec::PokeSpec;
 use crate::{Commands, spec};
@@ -123,7 +124,7 @@ impl CommandLogic for Generate {
                     Some(evs),
                 );
 
-                println!("{}", spec);
+                success(format!("{spec}").as_str())
             }
         }
     }

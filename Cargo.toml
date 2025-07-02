@@ -6,7 +6,6 @@ description = "Generate Pokemon from the command-line!"
 
 [dependencies]
 clap = { version = "4.5.40", features = ["color", "derive"] }
-num = "0.4.3"
-rustemon = { version = "4.2.0", features = ["serialize"] }
+colored = "3.0.0"
 log = "0.4.27"
 rand = "0.9.1"

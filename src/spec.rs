@@ -5,6 +5,8 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Formatter};
 use std::process::exit;
 
+use colored::Colorize;
+
 static STAT_NAMES: [&str; 6] = ["atk", "def", "spatk", "spdef", "spd", "hp"];
 pub static NATURES: [&str; 25] = [
     "Hardy", "Lonely", "Adamant", "Naughty", "Brave", "Bold", "Docile", "Impish", "Lax", "Relaxed",
@@ -59,7 +61,7 @@ impl StatSpread {
         if stats.is_some() {
             for (stat, value) in stats.unwrap() {
                 if STAT_NAMES.contains(&stat.as_str()) {
-                    if value > 31 || value < 0 {
+                    if value > 31 {
                         println!("IV {} is out of bounds. Must be between 1 and 31!", &stat);
                         exit(-1)
                     }
@@ -102,7 +104,7 @@ impl StatSpread {
                         exit(-1)
                     }
 
-                    if value > 252 || value < 0 {
+                    if value > 252 {
                         println!("Invalid EV configuration: EV {stat} is not between 1 and 252!");
                         exit(-1)
                     }
@@ -196,6 +198,19 @@ impl PokeSpec {
 
 impl Display for PokeSpec {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[{}] {} | ivs: {} | evs: {}", self.level, self.species, self.ivs, self.evs)
+        write!(
+            f,
+            "[{}] ({}), lvl: {} | IVs: {} | EVs: {} | {} |",
+            self.species,
+            if self.nickname.is_some() {
+                self.nickname.clone().unwrap()
+            } else {
+                self.species.clone()
+            },
+            self.level,
+            self.ivs,
+            self.evs,
+            self.nature
+        )
     }
 }

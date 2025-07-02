@@ -1,6 +1,6 @@
 pub mod command_logic;
+mod console;
 pub mod enums;
-mod errors;
 pub mod generate;
 pub mod spec;
 
@@ -28,6 +28,7 @@ pub enum Commands {
         #[arg(short, long, default_value_t = 1)]
         level: u8,
 
+        #[arg(long)]
         nickname: Option<String>,
 
         #[arg(short, long, default_value_t = false)]
@@ -35,7 +36,11 @@ pub enum Commands {
 
         #[arg(long, default_value = "PokeSpecRS")]
         ot: String,
+
+        #[arg(long)]
         tid: Option<usize>,
+
+        #[arg(long)]
         sid: Option<usize>,
 
         #[arg(short, long)]
@@ -47,20 +52,31 @@ pub enum Commands {
         #[arg(short, long)]
         nature: Option<String>,
 
+        #[arg(long)]
         ivatk: Option<u16>,
+        #[arg(long)]
         ivspatk: Option<u16>,
+        #[arg(long)]
         ivdef: Option<u16>,
+        #[arg(long)]
         ivspdef: Option<u16>,
+        #[arg(long)]
         ivspd: Option<u16>,
+        #[arg(long)]
         ivhp: Option<u16>,
-
+        #[arg(long)]
         evatk: Option<u16>,
+        #[arg(long)]
         evspatk: Option<u16>,
+        #[arg(long)]
         evdef: Option<u16>,
+        #[arg(long)]
         evspdef: Option<u16>,
+        #[arg(long)]
         evspd: Option<u16>,
+        #[arg(long)]
         evhp: Option<u16>,
-
+        #[arg(long)]
         moveset: Option<Vec<String>>,
     },
 }
