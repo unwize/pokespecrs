@@ -129,7 +129,7 @@ impl CommandLogic for Generate {
                 );
 
                 let moves = get_pokemon_moves(&get_pokemon(&species));
-                info(&format!("{}", moves.iter().format(",")));
+                info(&format!("{:?}", moves));
                 success(format!("{spec}").as_str())
             }
         }

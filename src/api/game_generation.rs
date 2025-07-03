@@ -32,53 +32,41 @@ impl Generation {
             Generation::GEN9 => "Gen 9".to_string(),
         }
     }
-}
 
-lazy_static! {
-    static ref GENERATION_MAP: HashMap<String, Generation> = HashMap::from([
-        ("red-blue".to_string(), Generation::GEN1),
-        ("yellow".to_string(), Generation::GEN1),
-        ("gold-silver".to_string(), Generation::GEN2),
-        ("crystal".to_string(), Generation::GEN2),
-        ("ruby-sapphire".to_string(), Generation::GEN3),
-        ("emerald".to_string(), Generation::GEN3),
-        ("firered-leafgreen".to_string(), Generation::GEN3),
-        ("diamond-pearl".to_string(), Generation::GEN4),
-        ("platinum".to_string(), Generation::GEN4),
-        ("heartgold-soulsilver".to_string(), Generation::GEN4),
-        ("black-white".to_string(), Generation::GEN5),
-        ("black-2-white-2".to_string(), Generation::GEN5),
-        ("x-y".to_string(), Generation::GEN6),
-        ("omega-ruby-alpha-sapphire".to_string(), Generation::GEN6),
-        ("sun-moon".to_string(), Generation::GEN7),
-        ("ultra-sun-ultra-moon".to_string(), Generation::GEN7),
-        ("sword-shield".to_string(), Generation::GEN8),
-        ("brilliant-diamond-and-shining-pearl".to_string(), Generation::GEN4),
-        ("scarlet-violet".to_string(), Generation::GEN9),
-    ]);
-}
-
-/// For a given str, parse out the corresponding Pokemon game generation.
-///
-/// # Examples
-///
-/// ```
-/// assert_eq(get_generation("1", Generation::GEN1)
-/// assert_eq(get_generation("platinum", Generation::GEN4)
-/// ```
-pub fn get_generation(val: &str) -> Option<Generation> {
-    println!("{}", GENERATION_MAP.keys().format(","));
-    // Check if the str can be parsed into an int. If so, pull the generation value from the enum directly.
-    let numeric_gen = val.parse::<u8>();
-    if numeric_gen.is_ok() {
-        return Some(Generation::from_u8(numeric_gen.unwrap()).unwrap());
-    }
-
-    // If the str is not an int, check if it is any of the version markers from PokeAPI and return the corresponding generation
-    if GENERATION_MAP.contains_key(val) {
-        Some(GENERATION_MAP[val].clone())
-    } else {
-        info(format!("Failed to get generation for {val}").as_str());
-        None
+    pub fn from(value: &str) -> Option<Self> {
+        match value {
+            "red-blue" => Some(Generation::GEN1),
+            "yellow" => Some(Generation::GEN1),
+            "gold-silver" => Some(Generation::GEN2),
+            "crystal" => Some(Generation::GEN2),
+            "ruby-sapphire" => Some(Generation::GEN3),
+            "emerald" => Some(Generation::GEN3),
+            "firered-leafgreen" => Some(Generation::GEN3),
+            "xd" => Some(Generation::GEN3),
+            "colosseum" => Some(Generation::GEN3),
+            "diamond-pearl" => Some(Generation::GEN4),
+            "platinum" => Some(Generation::GEN4),
+            "heartgold-soulsilver" => Some(Generation::GEN4),
+            "black-white" => Some(Generation::GEN5),
+            "black-2-white-2" => Some(Generation::GEN5),
+            "x-y" => Some(Generation::GEN6),
+            "omega-ruby-alpha-sapphire" => Some(Generation::GEN6),
+            "sun-moon" => Some(Generation::GEN7),
+            "ultra-sun-ultra-moon" => Some(Generation::GEN7),
+            "sword-shield" => Some(Generation::GEN8),
+            "legends-arceus" => Some(Generation::GEN8),
+            "brilliant-diamond-and-shining-pearl" => Some(Generation::GEN4),
+            "scarlet-violet" => Some(Generation::GEN9),
+            "1" => Some(Generation::GEN1),
+            "2" => Some(Generation::GEN2),
+            "3" => Some(Generation::GEN3),
+            "4" => Some(Generation::GEN4),
+            "5" => Some(Generation::GEN5),
+            "6" => Some(Generation::GEN6),
+            "7" => Some(Generation::GEN7),
+            "8" => Some(Generation::GEN8),
+            "9" => Some(Generation::GEN9),
+            _ => None,
+        }
     }
 }

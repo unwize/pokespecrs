@@ -32,6 +32,7 @@ impl LearnMethod {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct MoveLearnMethod {
     pub method: LearnMethod,
     pub level_learned_at: Option<u8>,
@@ -44,6 +45,7 @@ impl Display for MoveLearnMethod {
     }
 }
 
+#[derive(Debug)]
 pub struct Move {
     pub name: String,
     pub generations: Vec<MoveLearnMethod>,
