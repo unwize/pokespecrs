@@ -1,10 +1,11 @@
 use crate::api::{get_pokemon, get_pokemon_moves};
-use crate::console::{info, success};
+use crate::console::{err, info, success};
 use crate::enums::Gender;
 use crate::spec::PokeSpec;
 use crate::{Commands, spec};
 use rand::{Rng, rng};
 use std::collections::HashMap;
+use std::process::exit;
 use itertools::Itertools;
 use log::info;
 
@@ -128,8 +129,16 @@ impl CommandLogic for Generate {
                     Some(evs),
                 );
 
+
                 let moves = get_pokemon_moves(&get_pokemon(&species));
-                info(&format!("{:?}", moves));
+
+                for spec_move in moveset {
+                    if moves.iter().find(|&m| {m.name.eq(spec_move)}).is_none() {
+                        err(format!("Move {spec_move} is not valid for {species}").as_str());
+                        exit(-1)
+                    }
+                }
+
                 success(format!("{spec}").as_str())
             }
         }

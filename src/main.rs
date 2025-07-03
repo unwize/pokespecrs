@@ -81,7 +81,7 @@ pub enum Commands {
         #[arg(long)]
         evhp: Option<u16>,
         #[arg(long)]
-        moveset: Option<Vec<String>>,
+        moveset: Vec<String>,
         #[arg(long = "gen")]
         generation: Option<u8>,
     },

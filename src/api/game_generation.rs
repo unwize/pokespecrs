@@ -1,9 +1,5 @@
-use lazy_static::lazy_static;
 use num_traits::FromPrimitive;
 use num_traits::ToPrimitive;
-use std::collections::HashMap;
-use itertools::Itertools;
-use crate::console::info;
 
 #[derive(FromPrimitive, ToPrimitive, Clone, Debug)]
 pub enum Generation {
@@ -54,6 +50,7 @@ impl Generation {
             "sun-moon" => Some(Generation::GEN7),
             "ultra-sun-ultra-moon" => Some(Generation::GEN7),
             "sword-shield" => Some(Generation::GEN8),
+            "lets-go-pikachu-lets-go-eevee" => Some(Generation::GEN8),
             "legends-arceus" => Some(Generation::GEN8),
             "brilliant-diamond-and-shining-pearl" => Some(Generation::GEN4),
             "scarlet-violet" => Some(Generation::GEN9),
