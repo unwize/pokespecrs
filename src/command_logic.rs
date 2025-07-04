@@ -2,7 +2,7 @@ use crate::api::{get_pokemon, get_pokemon_moves};
 use crate::console::{err, info, success};
 use crate::enums::Gender;
 use crate::spec::PokeSpec;
-use crate::{Commands, spec};
+use crate::{Commands, spec, CacheArgs, CacheCommands};
 use rand::{Rng, rng};
 use std::collections::HashMap;
 use std::process::exit;
@@ -15,6 +15,8 @@ pub trait CommandLogic {
 }
 
 pub struct Generate;
+
+pub struct Cache;
 
 impl CommandLogic for Generate {
     /// Generate a PokeSpec from a given set of arguments.
@@ -141,6 +143,35 @@ impl CommandLogic for Generate {
 
                 success(format!("{spec}").as_str())
             }
+            _ => {}
+        }
+    }
+}
+
+impl CommandLogic for Cache {
+    fn execute(&self, args: Commands) {
+
+        match &args {
+            Commands::Cache(cache_args) => {
+                let sub_cmd = &cache_args.command;
+                match sub_cmd {
+                    CacheCommands::Check { species } => {
+
+                    }
+                    CacheCommands::Enable {..} => {
+
+                    }
+                    CacheCommands::Disable {..} => {
+
+                    }
+                    CacheCommands::Clear {..} => {
+
+                    }
+                    CacheCommands::Purge { species } => {}
+                    CacheCommands::Validate { } => {}
+                }
+            }
+            _ => {}
         }
     }
 }
