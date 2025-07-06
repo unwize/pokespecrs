@@ -1,7 +1,7 @@
-use std::fmt::{Display, Formatter};
 use crate::api::game_generation::Generation;
-use itertools::Itertools;
 use crate::console::err;
+use itertools::Itertools;
+use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Clone, ToPrimitive, FromPrimitive)]
 pub enum LearnMethod {
@@ -18,10 +18,13 @@ impl LearnMethod {
             "egg" => Some(LearnMethod::Egg),
             "tutor" => Some(LearnMethod::Tutor),
             "level-up" => Some(LearnMethod::LevelUp),
-            _ => { err(format!("Invalid LearnMethod value: '{}'", value).as_str()); None },
+            _ => {
+                err(format!("Invalid LearnMethod value: '{}'", value).as_str());
+                None
+            }
         }
     }
-    
+
     pub fn to_string(&self) -> String {
         match self {
             LearnMethod::Machine => "machine".to_string(),
@@ -41,7 +44,13 @@ pub struct MoveLearnMethod {
 
 impl Display for MoveLearnMethod {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} @lvl: {} ({})", self.generation.to_string(), self.level_learned_at.unwrap_or(0), self.method.to_string())
+        write!(
+            f,
+            "{} @lvl: {} ({})",
+            self.generation.to_string(),
+            self.level_learned_at.unwrap_or(0),
+            self.method.to_string()
+        )
     }
 }
 

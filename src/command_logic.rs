@@ -2,12 +2,12 @@ use crate::api::{get_pokemon, get_pokemon_moves};
 use crate::console::{err, info, success};
 use crate::enums::Gender;
 use crate::spec::PokeSpec;
-use crate::{Commands, spec, CacheArgs, CacheCommands};
+use crate::{CacheArgs, CacheCommands, Commands, spec};
+use itertools::Itertools;
+use log::info;
 use rand::{Rng, rng};
 use std::collections::HashMap;
 use std::process::exit;
-use itertools::Itertools;
-use log::info;
 
 /// A trait that defines the interface for executing command logic
 pub trait CommandLogic {
@@ -131,11 +131,10 @@ impl CommandLogic for Generate {
                     Some(evs),
                 );
 
-
                 let moves = get_pokemon_moves(&get_pokemon(&species));
 
                 for spec_move in moveset {
-                    if moves.iter().find(|&m| {m.name.eq(spec_move)}).is_none() {
+                    if moves.iter().find(|&m| m.name.eq(spec_move)).is_none() {
                         err(format!("Move {spec_move} is not valid for {species}").as_str());
                         exit(-1)
                     }
@@ -150,25 +149,16 @@ impl CommandLogic for Generate {
 
 impl CommandLogic for Cache {
     fn execute(&self, args: Commands) {
-
         match &args {
             Commands::Cache(cache_args) => {
                 let sub_cmd = &cache_args.command;
                 match sub_cmd {
-                    CacheCommands::Check { species } => {
-
-                    }
-                    CacheCommands::Enable {..} => {
-
-                    }
-                    CacheCommands::Disable {..} => {
-
-                    }
-                    CacheCommands::Clear {..} => {
-
-                    }
+                    CacheCommands::Check { species } => {}
+                    CacheCommands::Enable { .. } => {}
+                    CacheCommands::Disable { .. } => {}
+                    CacheCommands::Clear { .. } => {}
                     CacheCommands::Purge { species } => {}
-                    CacheCommands::Validate { } => {}
+                    CacheCommands::Validate {} => {}
                 }
             }
             _ => {}

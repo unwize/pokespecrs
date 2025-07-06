@@ -1,13 +1,15 @@
 mod api;
+mod cache;
 pub mod command_logic;
+mod config;
 mod console;
 pub mod enums;
 pub mod generate;
 pub mod spec;
 
 use crate::command_logic::CommandLogic;
-use clap::{Args, Parser};
 use clap::Subcommand;
+use clap::{Args, Parser};
 
 #[macro_use]
 extern crate num_derive;
@@ -16,7 +18,6 @@ extern crate num_derive;
 #[command(name = "PokeSpecRS")]
 #[command(version, about, long_about = None)]
 struct Cli {
-
     // All commands are held within the Commands enum
     #[command(subcommand)]
     command: Commands,
@@ -25,10 +26,8 @@ struct Cli {
 // https://docs.rs/clap/latest/clap/_derive/_tutorial/index.html#subcommands
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-
     // The main command. Used to generate Pokemon specs.
     Generate {
-
         // Required, positional
         species: String,
 
@@ -37,7 +36,7 @@ pub enum Commands {
         ability: Option<String>,
         #[arg(short, long, default_value_t = 1)]
         level: u8,
-        #[arg(long, alias="nick")]
+        #[arg(long, alias = "nick")]
         nickname: Option<String>,
         #[arg(short, long, default_value_t = false)]
         shiny: bool,
@@ -51,7 +50,7 @@ pub enum Commands {
         gender: Option<String>,
         #[arg(short, long, alias="ba", default_value = Some("poke"))]
         ball: Option<String>,
-        #[arg(short, long, alias="nat")]
+        #[arg(short, long, alias = "nat")]
         nature: Option<String>,
         #[arg(long)]
         ivatk: Option<u16>,
@@ -85,16 +84,15 @@ pub enum Commands {
 
     // The Cache command and its various subcommands.
     // See: https://github.com/clap-rs/clap/blob/3ef784b516b2c9fbf6adb1c3603261b085561be7/examples/git-derive.rs
-    Cache(CacheArgs)
+    Cache(CacheArgs),
 }
 
 #[derive(Debug, Args, Clone)]
 #[command(args_conflicts_with_subcommands = true)]
 struct CacheArgs {
-
     // A struct that hosts the Cache command's sub-commands.
     #[command(subcommand)]
-    command: CacheCommands
+    command: CacheCommands,
 }
 
 #[derive(Debug, Subcommand, Clone)]
@@ -102,9 +100,9 @@ enum CacheCommands {
     Enable {},
     Disable {},
     Clear {},
-    Check {species: String},
-    Purge {species: String},
-    Validate {}
+    Check { species: String },
+    Purge { species: String },
+    Validate {},
 }
 
 fn print_type_of<T>(_: &T) {
@@ -120,7 +118,7 @@ fn main() {
         Commands::Generate { .. } => {
             command_logic::Generate.execute(args.command);
         }
-        Commands::Cache{..} => {
+        Commands::Cache { .. } => {
             command_logic::Cache.execute(args.command);
         }
     }

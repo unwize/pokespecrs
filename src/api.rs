@@ -1,4 +1,4 @@
-use crate::api::game_generation::{Generation};
+use crate::api::game_generation::Generation;
 use crate::api::pokemon_move::{LearnMethod, Move, MoveLearnMethod};
 use crate::console::err;
 use std::process::exit;
@@ -37,7 +37,19 @@ pub fn get_pokemon_moves(pokemon_json: &serde_json::Value) -> Vec<Move> {
                 method: LearnMethod::from(method["move_learn_method"]["name"].as_str().unwrap())
                     .unwrap(),
                 level_learned_at: Some(method["level_learned_at"].as_u64().unwrap() as u8),
-                generation: Generation::from(&method["version_group"]["name"].as_str().unwrap().to_string()).expect(format!("Failed to get version group from str: '{}'", method["version_group"]["name"].as_str().unwrap()).as_str()),
+                generation: Generation::from(
+                    &method["version_group"]["name"]
+                        .as_str()
+                        .unwrap()
+                        .to_string(),
+                )
+                .expect(
+                    format!(
+                        "Failed to get version group from str: '{}'",
+                        method["version_group"]["name"].as_str().unwrap()
+                    )
+                    .as_str(),
+                ),
             })
         }
 
