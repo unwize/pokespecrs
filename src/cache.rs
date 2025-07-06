@@ -25,9 +25,19 @@ pub fn set_up_db(connection: &Connection) -> Result<()> {
         "CREATE TABLE IF NOT EXISTS moves (\
                 id INTEGER PRIMARY KEY, \
                 name VARCHAR NOT NULL, \
-                FOREIGN KEY(species) REFERENCES pokemon(id)\
+                FOREIGN KEY(species) NOT NULL REFERENCES pokemon(id),\
+                method INTEGER NOT NULL,
+                level_learned_at INTEGER,
+                generation INTEGER NOT NULL,
         )",
         ())?;
+
+    Ok(())
+}
+
+pub fn insert_pokemon(connection: &Connection, species: &str) -> Result<()> {
+
+    connection.execute("INSERT INTO pokemon (species) VALUES (?1)", ())?;
 
     Ok(())
 }
