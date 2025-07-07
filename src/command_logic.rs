@@ -7,7 +7,7 @@ use crate::{spec, CacheCommands, Commands};
 use rand::{rng, Rng};
 use std::collections::HashMap;
 use std::process::exit;
-use crate::cache::{insert_pokemon, is_species_cached};
+use crate::cache::{get_species_id, insert_pokemon, is_species_cached};
 
 /// A trait that defines the interface for executing command logic
 pub trait CommandLogic {
@@ -136,6 +136,12 @@ impl CommandLogic for Generate {
                 match is_species_cached(conn, species) {
                     true => {
                         println!("Species cache hit!");
+
+                        let species_id = get_species_id(conn, &species);
+
+                        let mut stmt = conn.prepare(format!("SELECT * FROM moves WHERE species = '{:?}'", species_id).as_str()).unwrap();
+                        let res = stmt.query_map([], ).unwrap();
+
                          moves = vec![];
                     }
                     false => {
