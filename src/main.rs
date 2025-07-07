@@ -10,6 +10,7 @@ pub mod spec;
 use crate::command_logic::CommandLogic;
 use clap::Subcommand;
 use clap::{Args, Parser};
+use crate::cache::{get_db_connection, is_cache_on_disk, set_up_db};
 
 #[macro_use]
 extern crate num_derive;
@@ -111,15 +112,23 @@ fn print_type_of<T>(_: &T) {
 
 fn main() {
     let args = Cli::parse();
+    
+    
+    let setup = !is_cache_on_disk();
+    let conn = get_db_connection();
+    
+    if setup {
+        set_up_db(&conn).expect("Unable to set up cache!");
+    }
 
     println!("{:?}", args.command);
 
     match &args.command {
         Commands::Generate { .. } => {
-            command_logic::Generate.execute(args.command);
+            command_logic::Generate.execute(args.command, Some(&conn));
         }
         Commands::Cache { .. } => {
-            command_logic::Cache.execute(args.command);
+            command_logic::Cache.execute(args.command, Some(&conn));
         }
     }
 }

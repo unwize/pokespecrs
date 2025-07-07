@@ -3,8 +3,8 @@ use crate::api::pokemon_move::{LearnMethod, Move, MoveLearnMethod};
 use crate::console::err;
 use std::process::exit;
 
-mod game_generation;
-mod pokemon_move;
+pub mod game_generation;
+pub mod pokemon_move;
 
 pub fn get_pokemon(species: &str) -> serde_json::Value {
     let req = reqwest::blocking::get(format!("https://pokeapi.co/api/v2/pokemon/{species}"));

@@ -1,17 +1,17 @@
 use crate::api::{get_pokemon, get_pokemon_moves};
-use crate::console::{err, info, success};
+use crate::api::pokemon_move::Move;
+use crate::console::{err, success};
 use crate::enums::Gender;
 use crate::spec::PokeSpec;
-use crate::{CacheArgs, CacheCommands, Commands, spec};
-use itertools::Itertools;
-use log::info;
-use rand::{Rng, rng};
+use crate::{spec, CacheCommands, Commands};
+use rand::{rng, Rng};
 use std::collections::HashMap;
 use std::process::exit;
+use crate::cache::{insert_pokemon, is_species_cached};
 
 /// A trait that defines the interface for executing command logic
 pub trait CommandLogic {
-    fn execute(&self, args: Commands);
+    fn execute(&self, args: Commands, conn: Option<&rusqlite::Connection>);
 }
 
 pub struct Generate;
@@ -40,7 +40,7 @@ impl CommandLogic for Generate {
     /// Optional Args with No Default
     /// - nickname
     /// - moveset
-    fn execute(&self, args: Commands) {
+    fn execute(&self, args: Commands, conn: Option<&rusqlite::Connection>) {
         // TODO: Get ability or random ability
         match &args {
             Commands::Generate {
@@ -131,7 +131,20 @@ impl CommandLogic for Generate {
                     Some(evs),
                 );
 
-                let moves = get_pokemon_moves(&get_pokemon(&species));
+                let conn = conn.unwrap();
+                let moves: Vec<Move>;
+                match is_species_cached(conn, species) {
+                    true => {
+                        println!("Species cache hit!");
+                         moves = vec![];
+                    }
+                    false => {
+                        println!("Species cache miss!");
+                        moves = get_pokemon_moves(&get_pokemon(&species));
+                        insert_pokemon(&conn, species).expect("Error when inserting species into cache!");
+                    }
+                }
+
 
                 for spec_move in moveset {
                     if moves.iter().find(|&m| m.name.eq(spec_move)).is_none() {
@@ -148,7 +161,7 @@ impl CommandLogic for Generate {
 }
 
 impl CommandLogic for Cache {
-    fn execute(&self, args: Commands) {
+    fn execute(&self, args: Commands, conn: Option<&rusqlite::Connection>) {
         match &args {
             Commands::Cache(cache_args) => {
                 let sub_cmd = &cache_args.command;
