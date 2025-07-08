@@ -103,18 +103,18 @@ pub fn insert_pokemon(connection: &Connection, species: &str) -> Result<()> {
 }
 
 pub fn insert_moves(connection: &Connection, moves: Vec<Move>, species_id: i32) -> Result<()> {
-    let mut buffer: Vec<String> = vec![String::from("BEGIN")];
+    let mut buffer: Vec<String> = vec![String::from("BEGIN;")];
 
     for pk_move in moves {
         for method in &pk_move.generations {
-            buffer.push(format!("INSERT INTO moves (name, species_id, method, level_learned_at, generation) VALUES ('{}', '{}', '{:?}', '{:?}', '{:?}');", pk_move.name, species_id, method.method.to_i32(), method.level_learned_at, method.generation.to_i32()))
+            buffer.push(format!("INSERT INTO moves (name, species_id, method, level_learned_at, generation) VALUES ('{}', '{}', '{}', '{}', '{}');", pk_move.name, species_id, method.method.to_i32().unwrap(), method.level_learned_at.unwrap(), method.generation.to_i32().unwrap()))
         }
     }
 
-    buffer.push(String::from("END;"));
+    buffer.push(String::from("COMMIT;"));
 
     connection
-        .execute(buffer.join("\n").as_str(), ())
+        .execute_batch(buffer.join(" ").as_str())
         .expect("Failed to batch execute Pokemon Moves INSERT to cache.");
     Ok(())
 }
