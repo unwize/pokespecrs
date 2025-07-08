@@ -132,6 +132,7 @@ impl CommandLogic for Generate {
                 );
 
                 let conn = conn.unwrap();
+
                 let moves: Vec<Move>;
                 match is_species_cached(conn, species) {
                     true => {
@@ -139,25 +140,31 @@ impl CommandLogic for Generate {
 
                         let species_id = get_species_id(conn, &species);
 
-                        let mut stmt = conn.prepare(format!("SELECT * FROM moves WHERE species = '{:?}'", species_id).as_str()).unwrap();
-                        let res = stmt.query_map([], ).unwrap();
+                        for spec_move in moveset {
+                            let mut stmt = conn.prepare(format!("SELECT * FROM moves WHERE species = '{:?}' AND name = '{}'", species_id, spec_move).as_str()).unwrap();
+                        }
+
 
                          moves = vec![];
                     }
                     false => {
                         println!("Species cache miss!");
                         moves = get_pokemon_moves(&get_pokemon(&species));
+
+                        // TODO: Cache these moves, potentially in an independent thread
                         insert_pokemon(&conn, species).expect("Error when inserting species into cache!");
+
+                        for spec_move in moveset {
+                            if moves.iter().find(|&m| m.name.eq(spec_move)).is_none() {
+                                err(format!("Move {spec_move} is not valid for {species}").as_str());
+                                exit(-1)
+                            }
+                        }
                     }
                 }
 
 
-                for spec_move in moveset {
-                    if moves.iter().find(|&m| m.name.eq(spec_move)).is_none() {
-                        err(format!("Move {spec_move} is not valid for {species}").as_str());
-                        exit(-1)
-                    }
-                }
+
 
                 success(format!("{spec}").as_str())
             }
