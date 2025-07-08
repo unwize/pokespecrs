@@ -6,14 +6,12 @@ use rusqlite::{Connection, Result};
 use std::path::Path;
 use std::process::exit;
 
-const CACHE_PATH: &str = "~/.pokespecrs/";
+const CACHE_PATH: &str = ".pokespecrs/";
 const CACHE_FNAME: &str = "cache.db3";
 
 const POKEMON_TABLE: &str = "pokemon";
 const PT_SPECIES_COL: &str = "species";
 const MOVE_TABLE: &str = "moves";
-
-
 
 /// Create a re-useable connection to the cache DB.
 pub fn get_db_connection() -> Connection {
@@ -39,39 +37,38 @@ pub fn del_cache_on_disk() {
 /// Each related table links key data elements to a specific pokemon via the `species` foreign key.
 pub fn set_up_db(connection: &Connection) -> Result<()> {
     println!("Initializing cache... This will happen only once!");
-    
-    connection.execute(format!(
-        "CREATE TABLE IF NOT EXISTS {} (\
-                id INTEGER PRIMARY KEY, \
-                {} VARCHAR NOT NULL\
-            )", POKEMON_TABLE.to_string(), PT_SPECIES_COL.to_string()).as_str(),
+
+    connection.execute(
+        "CREATE TABLE IF NOT EXISTS pokemon (
+                id INTEGER PRIMARY KEY,
+                species VARCHAR NOT NULL
+            );",
         (),
     )?;
 
-    connection.execute(format!(
-        "CREATE TABLE IF NOT EXISTS moves (\
-                id INTEGER PRIMARY KEY, \
-                name VARCHAR NOT NULL, \
-                FOREIGN KEY ({}) REFERENCES {} (id),\
+    connection.execute(
+        "CREATE TABLE IF NOT EXISTS moves (
+                id INTEGER PRIMARY KEY,
+                name VARCHAR NOT NULL,
+                species_id INTEGER NOT NULL,
                 method INTEGER NOT NULL,
                 level_learned_at INTEGER,
                 generation INTEGER NOT NULL,
-        )", String::from(PT_SPECIES_COL), String::from(POKEMON_TABLE)).as_str(),
-        ())?;
+                FOREIGN KEY(species_id) REFERENCES pokemon(id)
+        );",
+        (),
+    )?;
 
     Ok(())
 }
 
 /// Check if a given species of pokemon has already been cached
 pub fn is_species_cached(connection: &Connection, species: &str) -> bool {
-    let mut stmt = connection.prepare(
-        format!("SELECT 1 FROM pokemon WHERE species = '{species}'").as_str()
-    );
+    let mut stmt =
+        connection.prepare(format!("SELECT 1 FROM pokemon WHERE species = '{species}'").as_str());
 
     match stmt {
-        Ok(mut res) => {
-            res.exists([]).unwrap()
-        }
+        Ok(mut res) => res.exists([]).unwrap(),
         Err(err) => {
             println!("Failed to execute cache check for species {}", species);
             println!("{}", err);
@@ -81,14 +78,11 @@ pub fn is_species_cached(connection: &Connection, species: &str) -> bool {
 }
 
 pub fn get_species_id(connection: &Connection, species: &str) -> Result<i32> {
-    let mut stmt = connection.prepare(
-        format!("SELECT 1 FROM pokemon WHERE species = '{species}'").as_str()
-    );
+    let mut stmt =
+        connection.prepare(format!("SELECT 1 FROM pokemon WHERE species = '{species}'").as_str());
 
     match stmt {
-        Ok(mut res) => {
-            res.query_one([], |row| {row.get("id")})
-        }
+        Ok(mut res) => res.query_one([], |row| row.get(0)),
         Err(err) => {
             println!("Failed to fetch ID for species {}", species);
             println!("{}", err);
@@ -98,8 +92,12 @@ pub fn get_species_id(connection: &Connection, species: &str) -> Result<i32> {
 }
 
 pub fn insert_pokemon(connection: &Connection, species: &str) -> Result<()> {
-
-    connection.execute(format!("INSERT INTO pokemon (species) VALUES ('{}');", species).as_str(), ()).expect("Failed to insert species");
+    connection
+        .execute(
+            format!("INSERT INTO pokemon (species) VALUES ('{}');", species).as_str(),
+            (),
+        )
+        .expect("Failed to insert species");
 
     Ok(())
 }
@@ -109,12 +107,14 @@ pub fn insert_moves(connection: &Connection, moves: Vec<Move>, species_id: i32) 
 
     for pk_move in moves {
         for method in &pk_move.generations {
-            buffer.push(format!("INSERT INTO moves (name, species, method, level_learned_at, generation) VALUES ('{}', '{}', '{:?}', '{:?}', '{:?}');", pk_move.name, species_id, method.method.to_i32(), method.level_learned_at, method.generation.to_i32()))
+            buffer.push(format!("INSERT INTO moves (name, species_id, method, level_learned_at, generation) VALUES ('{}', '{}', '{:?}', '{:?}', '{:?}');", pk_move.name, species_id, method.method.to_i32(), method.level_learned_at, method.generation.to_i32()))
         }
     }
-        
+
     buffer.push(String::from("END;"));
-    
-    connection.execute(buffer.join("\n").as_str(), ()).expect("Failed to batch execute Pokemon Moves INSERT to cache.");
+
+    connection
+        .execute(buffer.join("\n").as_str(), ())
+        .expect("Failed to batch execute Pokemon Moves INSERT to cache.");
     Ok(())
 }

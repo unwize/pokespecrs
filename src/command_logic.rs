@@ -1,11 +1,14 @@
 use crate::api::pokemon_move::Move;
 use crate::api::{get_pokemon, get_pokemon_moves};
-use crate::cache::{del_cache_on_disk, get_db_connection, get_species_id, insert_moves, insert_pokemon, is_cache_on_disk, is_species_cached, set_up_db};
+use crate::cache::{
+    del_cache_on_disk, get_db_connection, get_species_id, insert_moves, insert_pokemon,
+    is_cache_on_disk, is_species_cached, set_up_db,
+};
 use crate::console::success;
 use crate::enums::Gender;
 use crate::spec::PokeSpec;
-use crate::{spec, CacheCommands, Commands};
-use rand::{rng, Rng};
+use crate::{CacheCommands, Commands, spec};
+use rand::{Rng, rng};
 use std::collections::HashMap;
 
 /// A trait that defines the interface for executing command logic
@@ -133,7 +136,6 @@ impl CommandLogic for Generate {
                 let conn = get_db_connection();
                 set_up_db(&conn).expect("Unable to set up cache!");
 
-
                 let conn = conn;
                 let moves: Vec<Move>;
                 let species_id: i32;
@@ -142,17 +144,21 @@ impl CommandLogic for Generate {
 
                 match is_species_cached(&conn, species) {
                     true => {
-                         species_id = get_species_id(&conn, &species).unwrap();
-                         moves = vec![];
+                        species_id = get_species_id(&conn, &species).unwrap();
+                        moves = vec![];
                     }
                     false => {
-                        println!("Downloading and caching moves... This will only happen once per Pokemon!");
+                        println!(
+                            "Downloading and caching moves... This will only happen once per Pokemon!"
+                        );
                         moves = get_pokemon_moves(&get_pokemon(&species));
 
                         // TODO: Cache these moves, potentially in an independent thread
-                        insert_pokemon(&conn, species).expect("Error when inserting species into cache!");
+                        insert_pokemon(&conn, species)
+                            .expect("Error when inserting species into cache!");
                         species_id = get_species_id(&conn, &species).unwrap();
-                        insert_moves(&conn, moves, species_id).expect("Error when inserting moves into cache!");
+                        insert_moves(&conn, moves, species_id)
+                            .expect("Error when inserting moves into cache!");
                     }
                 }
                 success(format!("{spec}").as_str())
@@ -171,9 +177,7 @@ impl CommandLogic for Cache {
                     CacheCommands::Check { species } => {}
                     CacheCommands::Enable { .. } => {}
                     CacheCommands::Disable { .. } => {}
-                    CacheCommands::Clear { .. } => {
-                        del_cache_on_disk()
-                    }
+                    CacheCommands::Clear { .. } => del_cache_on_disk(),
                     CacheCommands::Purge { species } => {}
                     CacheCommands::Validate {} => {}
                 }
