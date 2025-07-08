@@ -3,13 +3,15 @@ CLI Utility to Generate Pokemon Specifications from the Command Line
 
 # Features
 
-**Fast**: Written in Rust, PokeSpecRS gets the job done quickly. It utilizes an optional local cache to further enhance responsiveness.  _(Coming Soon!)_
+**Fast**: Written in Rust, PokeSpecRS gets the job done quickly. It utilizes an optional persistent local cache to further enhance responsiveness.
 
 **Tested**: PokeSpecRS features a large and robust collection of tests that are run to ensure your spec gets generated without error, every time. _(Coming Soon!)_
 
 **Readable**: With an emphasis on clarity, PokeSpecRS ensures that its outputs are legible and concise.
 
 **Correct**: PokeSpecRS ensures your specs are legal, to the best of its abilities. Leveraging PokeAPI, PokeSpecRS does the hard work for you.
+
+**Configurable**: Want to hard-code default values for your specs? Change the location of the cache? PokeSpecRS has you covered with its highly-configurable behaviors.
 
 # Commands
 
@@ -44,10 +46,30 @@ Generate a pokemon.
 - `evhp` (optional): The EV of the pokemon's hp stat. Default: Random
 - `gen` (optional): Coerce the moveset, ball, and abilities to be valid for a particular generation. Default: Assumed highest-legal generation
 
+## `cache`
+
+Manage the cache.
+
+### `enable`
+
+Enable the cache.
+
+### `disable`
+
+Disable the cache.
+
+### `clear`
+
+Delete the cache.
+
+### `purge <pokemon>`
+
+Purge all data for a specific Pokemon from the cache.
+
 # Aknowlegments
 
 - [Rust-Cli Guide](https://rust-cli.github.io/book/index.html)
 - [CLAP](https://docs.rs/clap/latest/clap/index.html)
 - [PokeAPI](https://pokeapi.co/)
 - Reqwest
-- [Turso Database, SQLite](https://github.com/tursodatabase/turso)
+- [Rusqlite](https://docs.rs/rusqlite/latest/rusqlite/)
