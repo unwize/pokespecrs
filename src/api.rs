@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use crate::api::game_generation::Generation;
 use crate::api::pokemon_move::{LearnMethod, Move, MoveLearnMethod};
 use crate::console::err;
@@ -29,11 +30,11 @@ pub fn get_pokemon_moves(pokemon_json: &serde_json::Value) -> Vec<Move> {
     // Iterate through the list of Move JSON objects
     for pokemon_move in pokemon_json["moves"].as_array().unwrap() {
         // A vector containing the learning methods and game generations for the given move
-        let mut methods: Vec<MoveLearnMethod> = Vec::new();
+        let mut methods: HashSet<MoveLearnMethod> = HashSet::new();
 
         // Iterate through the Move Learning Methods JSON array
         for method in pokemon_move["version_group_details"].as_array().unwrap() {
-            methods.push(MoveLearnMethod {
+            methods.insert(MoveLearnMethod {
                 method: LearnMethod::from(method["move_learn_method"]["name"].as_str().unwrap())
                     .unwrap(),
                 level_learned_at: Some(method["level_learned_at"].as_u64().unwrap() as u8),
@@ -50,13 +51,13 @@ pub fn get_pokemon_moves(pokemon_json: &serde_json::Value) -> Vec<Move> {
                     )
                     .as_str(),
                 ),
-            })
+            });
         }
 
         moves.push(Move {
             name: String::from(pokemon_move["move"]["name"].as_str().unwrap()),
             generations: methods,
-        })
+        });
     }
 
     moves

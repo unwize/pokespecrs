@@ -1,9 +1,10 @@
+use std::collections::HashSet;
 use crate::api::game_generation::Generation;
 use crate::console::err;
 use itertools::Itertools;
 use std::fmt::{Display, Formatter};
 
-#[derive(Debug, Clone, ToPrimitive, FromPrimitive)]
+#[derive(Debug, Clone, ToPrimitive, FromPrimitive, Eq, Hash, PartialEq)]
 pub enum LearnMethod {
     Machine = 0,
     Egg = 1,
@@ -35,7 +36,7 @@ impl LearnMethod {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct MoveLearnMethod {
     pub method: LearnMethod,
     pub level_learned_at: Option<u8>,
@@ -54,10 +55,10 @@ impl Display for MoveLearnMethod {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Move {
     pub name: String,
-    pub generations: Vec<MoveLearnMethod>,
+    pub generations: HashSet<MoveLearnMethod>,
 }
 
 impl Display for Move {

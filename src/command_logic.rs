@@ -9,7 +9,7 @@ use crate::enums::Gender;
 use crate::spec::PokeSpec;
 use crate::{CacheCommands, Commands, spec};
 use rand::{Rng, rng};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 /// A trait that defines the interface for executing command logic
 pub trait CommandLogic {
@@ -137,27 +137,24 @@ impl CommandLogic for Generate {
                 set_up_db(&conn).expect("Unable to set up cache!");
 
                 let conn = conn;
-                let moves: Vec<Move>;
                 let species_id: i32;
-                // TODO: Unify cache-miss and cache-hit logic for moves. I.E, a cache-miss should result in caching, and then retrieval to simplify overall logic.
                 // TODO: There's probably an easy way to detect if the species is in the cache while retrieving its primary-key id. Rewrite get_species_id?
 
                 match is_species_cached(&conn, species) {
                     true => {
                         species_id = get_species_id(&conn, &species).unwrap();
-                        moves = vec![];
                     }
                     false => {
                         println!(
                             "Downloading and caching moves... This will only happen once per Pokemon!"
                         );
-                        moves = get_pokemon_moves(&get_pokemon(&species));
+                        let moves = get_pokemon_moves(&get_pokemon(&species));
 
                         // TODO: Cache these moves, potentially in an independent thread
                         insert_pokemon(&conn, species)
                             .expect("Error when inserting species into cache!");
                         species_id = get_species_id(&conn, &species).unwrap();
-                        insert_moves(&conn, moves, species_id)
+                        insert_moves(&conn, &moves, species_id)
                             .expect("Error when inserting moves into cache!");
                     }
                 }

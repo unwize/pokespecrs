@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use crate::api::pokemon_move::Move;
 use std::fs::{create_dir_all, remove_file};
 
@@ -102,7 +103,7 @@ pub fn insert_pokemon(connection: &Connection, species: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn insert_moves(connection: &Connection, moves: Vec<Move>, species_id: i32) -> Result<()> {
+pub fn insert_moves(connection: &Connection, moves: &Vec<Move>, species_id: i32) -> Result<()> {
     let mut buffer: Vec<String> = vec![String::from("BEGIN;")];
 
     for pk_move in moves {

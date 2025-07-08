@@ -1,7 +1,7 @@
 use num_traits::FromPrimitive;
 use num_traits::ToPrimitive;
 
-#[derive(FromPrimitive, ToPrimitive, Clone, Debug)]
+#[derive(FromPrimitive, ToPrimitive, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Generation {
     GEN1 = 1,
     GEN2 = 2,
