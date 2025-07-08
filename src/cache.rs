@@ -1,6 +1,7 @@
-use std::fs::{create_dir, create_dir_all};
-use crate::api::pokemon_move::{Move};
+use crate::api::pokemon_move::Move;
+use std::fs::{create_dir_all, remove_file};
 
+use num_traits::ToPrimitive;
 use rusqlite::{Connection, Result};
 use std::path::Path;
 use std::process::exit;
@@ -25,17 +26,25 @@ pub fn is_cache_on_disk() -> bool {
     Path::new(CACHE_PATH).exists()
 }
 
-
+pub fn del_cache_on_disk() {
+    let path = Path::new(CACHE_PATH).join(CACHE_FNAME);
+    if path.exists() {
+        remove_file(path).expect("Failed to delete cache!");
+        println!("Cache deleted!");
+    }
+}
 /// Configure the DB for use, from scratch.
 ///
 /// The cache has a few tables, each of which is centered around the `pokemon` table.
 /// Each related table links key data elements to a specific pokemon via the `species` foreign key.
 pub fn set_up_db(connection: &Connection) -> Result<()> {
+    println!("Initializing cache... This will happen only once!");
+    
     connection.execute(format!(
         "CREATE TABLE IF NOT EXISTS {} (\
                 id INTEGER PRIMARY KEY, \
                 {} VARCHAR NOT NULL\
-            )", POKEMON_TABLE, PT_SPECIES_COL).as_str(),
+            )", POKEMON_TABLE.to_string(), PT_SPECIES_COL.to_string()).as_str(),
         (),
     )?;
 
@@ -47,7 +56,7 @@ pub fn set_up_db(connection: &Connection) -> Result<()> {
                 method INTEGER NOT NULL,
                 level_learned_at INTEGER,
                 generation INTEGER NOT NULL,
-        )", PT_SPECIES_COL, POKEMON_TABLE).as_str(),
+        )", String::from(PT_SPECIES_COL), String::from(POKEMON_TABLE)).as_str(),
         ())?;
 
     Ok(())
@@ -95,11 +104,17 @@ pub fn insert_pokemon(connection: &Connection, species: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn insert_moves(connection: &Connection, moves: Vec<Move>, species: &str) -> Result<()> {
-        let mut buffer: Vec<String> = vec![String::from("BEGIN")];
+pub fn insert_moves(connection: &Connection, moves: Vec<Move>, species_id: i32) -> Result<()> {
+    let mut buffer: Vec<String> = vec![String::from("BEGIN")];
 
-        for pk_move in moves {
+    for pk_move in moves {
+        for method in &pk_move.generations {
+            buffer.push(format!("INSERT INTO moves (name, species, method, level_learned_at, generation) VALUES ('{}', '{}', '{:?}', '{:?}', '{:?}');", pk_move.name, species_id, method.method.to_i32(), method.level_learned_at, method.generation.to_i32()))
         }
-
+    }
+        
+    buffer.push(String::from("END;"));
+    
+    connection.execute(buffer.join("\n").as_str(), ()).expect("Failed to batch execute Pokemon Moves INSERT to cache.");
     Ok(())
 }

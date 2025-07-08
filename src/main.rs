@@ -1,19 +1,16 @@
+#[macro_use]
+extern crate num_derive;
 mod api;
 mod cache;
 pub mod command_logic;
 mod config;
 mod console;
 pub mod enums;
-pub mod generate;
 pub mod spec;
 
 use crate::command_logic::CommandLogic;
 use clap::Subcommand;
 use clap::{Args, Parser};
-use crate::cache::{get_db_connection, is_cache_on_disk, set_up_db};
-
-#[macro_use]
-extern crate num_derive;
 
 #[derive(Parser, Debug)]
 #[command(name = "PokeSpecRS")]
@@ -112,23 +109,15 @@ fn print_type_of<T>(_: &T) {
 
 fn main() {
     let args = Cli::parse();
-    
-    
-    let setup = !is_cache_on_disk();
-    let conn = get_db_connection();
-    
-    if setup {
-        set_up_db(&conn).expect("Unable to set up cache!");
-    }
 
     println!("{:?}", args.command);
 
     match &args.command {
         Commands::Generate { .. } => {
-            command_logic::Generate.execute(args.command, Some(&conn));
+            command_logic::Generate.execute(args.command);
         }
         Commands::Cache { .. } => {
-            command_logic::Cache.execute(args.command, Some(&conn));
+            command_logic::Cache.execute(args.command);
         }
     }
 }

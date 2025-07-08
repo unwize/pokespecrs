@@ -1,17 +1,16 @@
-use crate::api::{get_pokemon, get_pokemon_moves};
 use crate::api::pokemon_move::Move;
-use crate::console::{err, success};
+use crate::api::{get_pokemon, get_pokemon_moves};
+use crate::cache::{del_cache_on_disk, get_db_connection, get_species_id, insert_moves, insert_pokemon, is_cache_on_disk, is_species_cached, set_up_db};
+use crate::console::success;
 use crate::enums::Gender;
 use crate::spec::PokeSpec;
 use crate::{spec, CacheCommands, Commands};
 use rand::{rng, Rng};
 use std::collections::HashMap;
-use std::process::exit;
-use crate::cache::{get_species_id, insert_pokemon, is_species_cached};
 
 /// A trait that defines the interface for executing command logic
 pub trait CommandLogic {
-    fn execute(&self, args: Commands, conn: Option<&rusqlite::Connection>);
+    fn execute(&self, args: Commands);
 }
 
 pub struct Generate;
@@ -40,7 +39,7 @@ impl CommandLogic for Generate {
     /// Optional Args with No Default
     /// - nickname
     /// - moveset
-    fn execute(&self, args: Commands, conn: Option<&rusqlite::Connection>) {
+    fn execute(&self, args: Commands) {
         // TODO: Get ability or random ability
         match &args {
             Commands::Generate {
@@ -131,43 +130,31 @@ impl CommandLogic for Generate {
                     Some(evs),
                 );
 
-                let conn = conn.unwrap();
+                let conn = get_db_connection();
+                set_up_db(&conn).expect("Unable to set up cache!");
 
+
+                let conn = conn;
                 let moves: Vec<Move>;
+                let species_id: i32;
+                // TODO: Unify cache-miss and cache-hit logic for moves. I.E, a cache-miss should result in caching, and then retrieval to simplify overall logic.
+                // TODO: There's probably an easy way to detect if the species is in the cache while retrieving its primary-key id. Rewrite get_species_id?
 
-                /// TODO: Unify cache-miss and cache-hit logic for moves. I.E, a cache-miss should result in caching, and then retrieval to simplify overall logic.
-                match is_species_cached(conn, species) {
+                match is_species_cached(&conn, species) {
                     true => {
-                        println!("Species cache hit!");
-
-                        let species_id = get_species_id(conn, &species);
-
-                        for spec_move in moveset {
-                            let mut stmt = conn.prepare(format!("SELECT * FROM moves WHERE species = '{:?}' AND name = '{}'", species_id, spec_move).as_str()).unwrap();
-                        }
-
-
+                         species_id = get_species_id(&conn, &species).unwrap();
                          moves = vec![];
                     }
                     false => {
-                        println!("Species cache miss!");
+                        println!("Downloading and caching moves... This will only happen once per Pokemon!");
                         moves = get_pokemon_moves(&get_pokemon(&species));
 
                         // TODO: Cache these moves, potentially in an independent thread
                         insert_pokemon(&conn, species).expect("Error when inserting species into cache!");
-
-                        for spec_move in moveset {
-                            if moves.iter().find(|&m| m.name.eq(spec_move)).is_none() {
-                                err(format!("Move {spec_move} is not valid for {species}").as_str());
-                                exit(-1)
-                            }
-                        }
+                        species_id = get_species_id(&conn, &species).unwrap();
+                        insert_moves(&conn, moves, species_id).expect("Error when inserting moves into cache!");
                     }
                 }
-
-
-
-
                 success(format!("{spec}").as_str())
             }
             _ => {}
@@ -176,7 +163,7 @@ impl CommandLogic for Generate {
 }
 
 impl CommandLogic for Cache {
-    fn execute(&self, args: Commands, conn: Option<&rusqlite::Connection>) {
+    fn execute(&self, args: Commands) {
         match &args {
             Commands::Cache(cache_args) => {
                 let sub_cmd = &cache_args.command;
@@ -184,7 +171,9 @@ impl CommandLogic for Cache {
                     CacheCommands::Check { species } => {}
                     CacheCommands::Enable { .. } => {}
                     CacheCommands::Disable { .. } => {}
-                    CacheCommands::Clear { .. } => {}
+                    CacheCommands::Clear { .. } => {
+                        del_cache_on_disk()
+                    }
                     CacheCommands::Purge { species } => {}
                     CacheCommands::Validate {} => {}
                 }
