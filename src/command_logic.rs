@@ -134,6 +134,8 @@ impl CommandLogic for Generate {
                 let conn = conn.unwrap();
 
                 let moves: Vec<Move>;
+
+                /// TODO: Unify cache-miss and cache-hit logic for moves. I.E, a cache-miss should result in caching, and then retrieval to simplify overall logic.
                 match is_species_cached(conn, species) {
                     true => {
                         println!("Species cache hit!");
