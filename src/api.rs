@@ -12,7 +12,7 @@ pub fn get_pokemon(species: &str) -> serde_json::Value {
     if req.is_err() {
         err("Failed to communicate with PokeAPI. Do you have an internet connection?");
         exit(-1);
-    }
+    } // TODO: Handle cases where pokemon does not exist
     let json = req.unwrap().json();
     if json.is_err() {
         err("Failed to parse JSON from PokeAPI's response. Is PokeAPI available?");
