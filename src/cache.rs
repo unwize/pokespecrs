@@ -1,11 +1,13 @@
+use crate::api::pokemon_move::{LearnMethod, Move, MoveLearnMethod};
 use std::collections::HashSet;
-use crate::api::pokemon_move::Move;
 use std::fs::{create_dir_all, remove_file};
 
-use num_traits::ToPrimitive;
+use num_traits::{FromPrimitive, ToPrimitive};
 use rusqlite::{Connection, Result};
 use std::path::Path;
 use std::process::exit;
+use crate::api::game_generation::Generation;
+use crate::console::err;
 
 const CACHE_PATH: &str = ".pokespecrs/";
 const CACHE_FNAME: &str = "cache.db3";
@@ -42,7 +44,7 @@ pub fn set_up_db(connection: &Connection) -> Result<()> {
     connection.execute(
         "CREATE TABLE IF NOT EXISTS pokemon (
                 id INTEGER PRIMARY KEY,
-                species VARCHAR NOT NULL
+                species VARCHAR NOT NULL COLLATE NOCASE
             );",
         (),
     )?;
@@ -50,7 +52,7 @@ pub fn set_up_db(connection: &Connection) -> Result<()> {
     connection.execute(
         "CREATE TABLE IF NOT EXISTS moves (
                 id INTEGER PRIMARY KEY,
-                name VARCHAR NOT NULL,
+                name VARCHAR NOT NULL COLLATE NOCASE,
                 species_id INTEGER NOT NULL,
                 method INTEGER NOT NULL,
                 level_learned_at INTEGER,
@@ -80,7 +82,7 @@ pub fn is_species_cached(connection: &Connection, species: &str) -> bool {
 
 pub fn get_species_id(connection: &Connection, species: &str) -> Result<i32> {
     let mut stmt =
-        connection.prepare(format!("SELECT 1 FROM pokemon WHERE species = '{species}'").as_str());
+        connection.prepare(format!("SELECT * FROM pokemon WHERE species = '{species}'").as_str());
 
     match stmt {
         Ok(mut res) => res.query_one([], |row| row.get(0)),
@@ -118,4 +120,40 @@ pub fn insert_moves(connection: &Connection, moves: &Vec<Move>, species_id: i32)
         .execute_batch(buffer.join(" ").as_str())
         .expect("Failed to batch execute Pokemon Moves INSERT to cache.");
     Ok(())
+}
+
+pub fn fetch_move_methods(conn: &Connection, species_id: i32, move_name: &str) -> Result<HashSet<MoveLearnMethod>> {
+    let stmt = conn.prepare("SELECT * FROM moves WHERE species_id = ?1 and name = ?2;");
+
+    match stmt {
+        Ok(mut res) => {
+            let moves_sql = res.query(rusqlite::params![species_id, move_name]);
+            let mut moves: HashSet<MoveLearnMethod> = HashSet::new();
+
+            match moves_sql {
+
+                // Yes, I know I'm shadowing the variable in the outer scope. It's fine.
+                Ok(mut moves_sql) => {
+                    while let Some(row) = moves_sql.next()? {
+                        moves.insert(MoveLearnMethod {
+                            method: LearnMethod::from_i32(row.get(3)?).unwrap(),
+                            level_learned_at: row.get(4)?,
+                            generation: Generation::from_i32(row.get(5)?).unwrap(),
+                        });
+                    }
+
+                    Ok(moves)
+                }
+                Err(e) => {
+                    err("An error occured while validating the moveset for your spec. If you see this error more than once, consider clearing the cache.");
+                    Err(e)
+                }
+            }
+
+        }
+        Err(e) => {
+            err("An error occured while validating the moveset for your spec. If you see this error more than once, consider clearing the cache.");
+            Err(e)
+        }
+    }
 }

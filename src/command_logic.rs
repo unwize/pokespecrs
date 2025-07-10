@@ -1,15 +1,13 @@
 use crate::api::pokemon_move::Move;
 use crate::api::{get_pokemon, get_pokemon_moves};
-use crate::cache::{
-    del_cache_on_disk, get_db_connection, get_species_id, insert_moves, insert_pokemon,
-    is_cache_on_disk, is_species_cached, set_up_db,
-};
-use crate::console::success;
+use crate::cache::{del_cache_on_disk, fetch_move_methods, get_db_connection, get_species_id, insert_moves, insert_pokemon, is_cache_on_disk, is_species_cached, set_up_db};
+use crate::console::{err, success};
 use crate::enums::Gender;
 use crate::spec::PokeSpec;
 use crate::{CacheCommands, Commands, spec};
 use rand::{Rng, rng};
 use std::collections::{HashMap, HashSet};
+use std::process::exit;
 
 /// A trait that defines the interface for executing command logic
 pub trait CommandLogic {
@@ -150,12 +148,25 @@ impl CommandLogic for Generate {
                         );
                         let moves = get_pokemon_moves(&get_pokemon(&species));
 
-                        // TODO: Cache these moves, potentially in an independent thread
                         insert_pokemon(&conn, species)
                             .expect("Error when inserting species into cache!");
                         species_id = get_species_id(&conn, &species).unwrap();
+                        println!("Species ID for {species} is {species_id}");
                         insert_moves(&conn, &moves, species_id)
                             .expect("Error when inserting moves into cache!");
+                    }
+                }
+
+                for poke_move in moveset {
+                    let mut methods = fetch_move_methods(&conn, species_id, poke_move);
+                    if methods.is_ok() {
+                        let methods = methods.unwrap();
+                        if methods.len() < 1 {
+                            err(format!("{poke_move} is not a valid move for {species}").as_str());
+                            exit(-1)
+                        }
+                    } else {
+                        println!("{:?}", methods.unwrap())
                     }
                 }
                 success(format!("{spec}").as_str())
