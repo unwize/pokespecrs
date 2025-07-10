@@ -1,7 +1,7 @@
-use std::collections::HashSet;
 use crate::api::game_generation::Generation;
 use crate::api::pokemon_move::{LearnMethod, Move, MoveLearnMethod};
 use crate::console::err;
+use std::collections::HashSet;
 use std::process::exit;
 
 pub mod game_generation;

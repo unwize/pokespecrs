@@ -1,6 +1,9 @@
 use crate::api::pokemon_move::Move;
 use crate::api::{get_pokemon, get_pokemon_moves};
-use crate::cache::{del_cache_on_disk, fetch_move_methods, get_db_connection, get_species_id, insert_moves, insert_pokemon, is_cache_on_disk, is_species_cached, set_up_db};
+use crate::cache::{
+    del_cache_on_disk, fetch_move_methods, get_db_connection, get_species_id, insert_moves,
+    insert_pokemon, is_cache_on_disk, is_species_cached, set_up_db,
+};
 use crate::console::{err, success};
 use crate::enums::Gender;
 use crate::spec::PokeSpec;

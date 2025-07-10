@@ -2,12 +2,11 @@ use crate::api::pokemon_move::{LearnMethod, Move, MoveLearnMethod};
 use std::collections::HashSet;
 use std::fs::{create_dir_all, remove_file};
 
+use crate::api::game_generation::Generation;
 use num_traits::{FromPrimitive, ToPrimitive};
-use rusqlite::{Connection, Result};
 use std::path::Path;
 use std::process::exit;
-use crate::api::game_generation::Generation;
-use crate::console::err;
+use rusqlite::{Connection, Result};
 
 const CACHE_PATH: &str = ".pokespecrs/";
 const CACHE_FNAME: &str = "cache.db3";
@@ -95,14 +94,16 @@ pub fn get_species_id(connection: &Connection, species: &str) -> Result<i32> {
 }
 
 pub fn insert_pokemon(connection: &Connection, species: &str) -> Result<()> {
-    connection
+    let stmt = connection
         .execute(
             format!("INSERT INTO pokemon (species) VALUES ('{}');", species).as_str(),
             (),
-        )
-        .expect("Failed to insert species");
+        );
 
-    Ok(())
+    match stmt {
+        Ok(_) => Ok(()),
+        Err(err) => {Err(err)}
+    }
 }
 
 pub fn insert_moves(connection: &Connection, moves: &Vec<Move>, species_id: i32) -> Result<()> {
@@ -116,13 +117,18 @@ pub fn insert_moves(connection: &Connection, moves: &Vec<Move>, species_id: i32)
 
     buffer.push(String::from("COMMIT;"));
 
-    connection
-        .execute_batch(buffer.join(" ").as_str())
-        .expect("Failed to batch execute Pokemon Moves INSERT to cache.");
-    Ok(())
+    let res = connection.execute_batch(buffer.join(" ").as_str());
+    match res {
+        Ok(_) => Ok(()),
+        Err(err) => Err(err) // Pass error up
+    }
 }
 
-pub fn fetch_move_methods(conn: &Connection, species_id: i32, move_name: &str) -> Result<HashSet<MoveLearnMethod>> {
+pub fn fetch_move_methods(
+    conn: &Connection,
+    species_id: i32,
+    move_name: &str,
+) -> Result<HashSet<MoveLearnMethod>> {
     let stmt = conn.prepare("SELECT * FROM moves WHERE species_id = ?1 and name = ?2;");
 
     match stmt {
@@ -131,29 +137,22 @@ pub fn fetch_move_methods(conn: &Connection, species_id: i32, move_name: &str) -
             let mut moves: HashSet<MoveLearnMethod> = HashSet::new();
 
             match moves_sql {
-
                 // Yes, I know I'm shadowing the variable in the outer scope. It's fine.
                 Ok(mut moves_sql) => {
+                    // Must use weird next() interface as Rows object does not implement Iterator trait
                     while let Some(row) = moves_sql.next()? {
+                        // idx corresponds to the order in which columns are declared in table creation statement
                         moves.insert(MoveLearnMethod {
                             method: LearnMethod::from_i32(row.get(3)?).unwrap(),
                             level_learned_at: row.get(4)?,
                             generation: Generation::from_i32(row.get(5)?).unwrap(),
                         });
                     }
-
                     Ok(moves)
                 }
-                Err(e) => {
-                    err("An error occured while validating the moveset for your spec. If you see this error more than once, consider clearing the cache.");
-                    Err(e)
-                }
+                Err(e) => Err(e), // Pass the error up
             }
-
         }
-        Err(e) => {
-            err("An error occured while validating the moveset for your spec. If you see this error more than once, consider clearing the cache.");
-            Err(e)
-        }
+        Err(e) => Err(e), // Pass the error up
     }
 }

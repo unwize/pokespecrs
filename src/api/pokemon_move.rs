@@ -1,7 +1,7 @@
-use std::collections::HashSet;
 use crate::api::game_generation::Generation;
 use crate::console::err;
 use itertools::Itertools;
+use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Clone, ToPrimitive, FromPrimitive, Eq, Hash, PartialEq)]

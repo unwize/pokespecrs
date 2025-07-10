@@ -17,3 +17,4 @@ itertools = "0.14.0"
 rusqlite = { version = "0.36.0", features = ["bundled","serde_json"] }
 figment = { version = "0.10.19", features = ["env", "json"] }
 serde = { version = "1.0.219", features = ["derive"] }
+anyhow = "1.0.98"
