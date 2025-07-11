@@ -1,25 +1,23 @@
-use crate::api::pokemon_move::Move;
 use crate::api::{get_pokemon, get_pokemon_moves};
 use crate::cache::{
     del_cache_on_disk, fetch_move_methods, get_db_connection, get_species_id, insert_moves,
-    insert_pokemon, is_cache_on_disk, is_species_cached, set_up_db,
+    insert_pokemon, is_species_cached, set_up_db,
 };
+use crate::errors::Result;
 use crate::console::{err, success};
 use crate::enums::Gender;
 use crate::spec::PokeSpec;
-use crate::{CacheCommands, Commands, spec};
-use rand::{Rng, rng};
-use std::collections::{HashMap, HashSet};
+use crate::{spec, CacheCommands, Commands};
+use rand::{rng, Rng};
+use std::collections::HashMap;
 use std::process::exit;
 
 /// A trait that defines the interface for executing command logic
 pub trait CommandLogic {
-    fn execute(&self, args: Commands);
+    fn execute(&self, args: Commands) -> Result<()>;
 }
 
 pub struct Generate;
-
-pub struct Cache;
 
 impl CommandLogic for Generate {
     /// Generate a PokeSpec from a given set of arguments.
@@ -43,7 +41,7 @@ impl CommandLogic for Generate {
     /// Optional Args with No Default
     /// - nickname
     /// - moveset
-    fn execute(&self, args: Commands) {
+    fn execute(&self, args: Commands) -> Result<()> {
         // TODO: Get ability or random ability
         match &args {
             Commands::Generate {
@@ -172,28 +170,31 @@ impl CommandLogic for Generate {
                         println!("{:?}", methods.unwrap())
                     }
                 }
-                success(format!("{spec}").as_str())
+                success(format!("{}", spec?).as_str());
+                Ok(())
             }
-            _ => {}
+            _ => {Ok(())}
         }
     }
 }
 
+pub struct Cache;
+
 impl CommandLogic for Cache {
-    fn execute(&self, args: Commands) {
+    fn execute(&self, args: Commands) -> Result<()> {
         match &args {
             Commands::Cache(cache_args) => {
                 let sub_cmd = &cache_args.command;
                 match sub_cmd {
-                    CacheCommands::Check { species } => {}
-                    CacheCommands::Enable { .. } => {}
-                    CacheCommands::Disable { .. } => {}
-                    CacheCommands::Clear { .. } => del_cache_on_disk(),
-                    CacheCommands::Purge { species } => {}
-                    CacheCommands::Validate {} => {}
+                    CacheCommands::Check { species } => {Ok(())}
+                    CacheCommands::Enable { .. } => {Ok(())}
+                    CacheCommands::Disable { .. } => {Ok(())}
+                    CacheCommands::Clear { .. } => {del_cache_on_disk(); Ok(())},
+                    CacheCommands::Purge { species } => {Ok(())}
+                    CacheCommands::Validate {} => {Ok(())}
                 }
             }
-            _ => {}
+            _ => {Ok(())}
         }
     }
 }

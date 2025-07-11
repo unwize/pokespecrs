@@ -1,10 +1,9 @@
-use crate::api::game_generation::Generation;
-use crate::api::pokemon_move::{LearnMethod, Move, MoveLearnMethod};
+use crate::enums::{Generation, LearnMethod};
+use crate::api::pokemon_move::{Move, MoveLearnMethod};
 use crate::console::err;
 use std::collections::HashSet;
 use std::process::exit;
 
-pub mod game_generation;
 pub mod pokemon_move;
 
 pub fn get_pokemon(species: &str) -> serde_json::Value {

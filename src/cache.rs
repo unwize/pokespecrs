@@ -1,8 +1,8 @@
-use crate::api::pokemon_move::{LearnMethod, Move, MoveLearnMethod};
+use crate::api::pokemon_move::{Move, MoveLearnMethod};
 use std::collections::HashSet;
 use std::fs::{create_dir_all, remove_file};
 
-use crate::api::game_generation::Generation;
+use crate::enums::{Generation, LearnMethod};
 use num_traits::{FromPrimitive, ToPrimitive};
 use std::path::Path;
 use std::process::exit;

@@ -1,40 +1,7 @@
-use crate::api::game_generation::Generation;
-use crate::console::err;
+use crate::enums::{Generation, LearnMethod};
 use itertools::Itertools;
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
-
-#[derive(Debug, Clone, ToPrimitive, FromPrimitive, Eq, Hash, PartialEq)]
-pub enum LearnMethod {
-    Machine = 0,
-    Egg = 1,
-    Tutor = 2,
-    LevelUp = 3,
-}
-
-impl LearnMethod {
-    pub fn from(value: &str) -> Option<Self> {
-        match value {
-            "machine" => Some(LearnMethod::Machine),
-            "egg" => Some(LearnMethod::Egg),
-            "tutor" => Some(LearnMethod::Tutor),
-            "level-up" => Some(LearnMethod::LevelUp),
-            _ => {
-                err(format!("Invalid LearnMethod value: '{}'", value).as_str());
-                None
-            }
-        }
-    }
-
-    pub fn to_string(&self) -> String {
-        match self {
-            LearnMethod::Machine => "machine".to_string(),
-            LearnMethod::Egg => "egg".to_string(),
-            LearnMethod::Tutor => "tutor".to_string(),
-            LearnMethod::LevelUp => "level-up".to_string(),
-        }
-    }
-}
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct MoveLearnMethod {

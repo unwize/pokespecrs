@@ -1,4 +1,5 @@
 use crate::enums::Gender;
+use crate::errors::{Result, SpecError, SpecFailure};
 use rand::Rng;
 use std::cmp::min;
 use std::collections::{HashMap, HashSet};
@@ -14,8 +15,9 @@ pub static NATURES: [&str; 25] = [
     "Timid", "Hasty", "Jolly", "Naive", "Serious",
 ];
 
+#[derive(Clone, Debug)]
 struct StatSpread {
-    stats: HashMap<String, u16>,
+    pub stats: HashMap<String, u16>,
     stat_max: u16,
     sum_max: u16,
 }
@@ -54,7 +56,7 @@ impl StatSpread {
         }
     }
 
-    fn from_ivs(stats: Option<HashMap<String, u16>>) -> Self {
+    fn from_ivs(stats: Option<HashMap<String, u16>>) -> Result<Self> {
         let mut available_stats = HashSet::from(STAT_NAMES.clone());
         let mut _stats: HashMap<String, u16> = HashMap::new();
 
@@ -62,15 +64,13 @@ impl StatSpread {
             for (stat, value) in stats.unwrap() {
                 if STAT_NAMES.contains(&stat.as_str()) {
                     if value > 31 {
-                        println!("IV {} is out of bounds. Must be between 1 and 31!", &stat);
-                        exit(-1)
+                        return Err(SpecError::new(SpecFailure::Iv(stat.clone(), value), None, None).into());
                     }
 
                     available_stats.remove(stat.as_str());
                     _stats.insert(stat.clone(), value);
                 } else {
-                    println!("{} is not a known IV!", &stat);
-                    exit(-1)
+                    return Err(SpecError::new(SpecFailure::InvalidStat(stat.clone()), None, None).into());
                 }
             }
         }
@@ -80,14 +80,14 @@ impl StatSpread {
             _stats.insert(String::from(stat), rng.random_range(0..32));
         }
 
-        StatSpread {
+        Ok(StatSpread {
             stats: _stats,
             stat_max: 31,
             sum_max: 31 * 6,
-        }
+        })
     }
 
-    fn from_evs(stats: Option<HashMap<String, u16>>) -> Self {
+    fn from_evs(stats: Option<HashMap<String, u16>>) -> Result<Self> {
         let mut available_stats = HashSet::from(STAT_NAMES.clone());
         let mut _stats: HashMap<String, u16> = HashMap::new();
         let mut sum: u16 = 0;
@@ -100,20 +100,17 @@ impl StatSpread {
                     available_stats.remove(stat.as_str());
 
                     if sum + value > 510 {
-                        println!("Invalid EV configuration: More than a sum total of 510 EVs!");
-                        exit(-1)
+                        return Err(SpecError::new(SpecFailure::EvMax(sum + value), None, None).into());
                     }
 
                     if value > 252 {
-                        println!("Invalid EV configuration: EV {stat} is not between 1 and 252!");
-                        exit(-1)
+                        return Err(SpecError::new(SpecFailure::Ev(stat, value), None, None).into());
                     }
                     sum = sum + value;
 
                     _stats.insert(String::from(stat), value);
                 } else {
-                    println!("{} is not a known EV!", &stat);
-                    exit(-1)
+                    return Err(SpecError::new(SpecFailure::InvalidStat(stat), None, None).into());
                 }
             }
         }
@@ -123,11 +120,11 @@ impl StatSpread {
             _stats.insert(String::from(stat), 0);
         }
 
-        StatSpread {
+        Ok(StatSpread {
             stats: _stats,
             stat_max: 252,
             sum_max: 510,
-        }
+        })
     }
 }
 
@@ -146,20 +143,21 @@ impl Display for StatSpread {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct PokeSpec {
-    species: String,
-    ability: String,
-    level: u8, // Max of 100
-    nickname: Option<String>,
-    shiny: bool,
-    ot: String,
-    tid: usize,
-    sid: usize,
-    gender: Gender,
-    ball: String,
-    nature: String,
-    ivs: StatSpread, // Max of 31 per stat, no actual stat total
-    evs: StatSpread, // Max of 252 per stat, with a total of 510
+    pub species: String,
+    pub ability: String,
+    pub level: u8, // Max of 100
+    pub nickname: Option<String>,
+    pub shiny: bool,
+    pub ot: String,
+    pub tid: usize,
+    pub sid: usize,
+    pub gender: Gender,
+    pub ball: String,
+    pub nature: String,
+    pub ivs: StatSpread, // Max of 31 per stat, no actual stat total
+    pub evs: StatSpread, // Max of 252 per stat, with a total of 510
 }
 
 impl PokeSpec {
@@ -177,8 +175,9 @@ impl PokeSpec {
         nature: String,
         ivs: Option<HashMap<String, u16>>,
         evs: Option<HashMap<String, u16>>,
-    ) -> PokeSpec {
-        PokeSpec {
+    ) -> Result<Self> {
+
+        Ok(PokeSpec {
             species,
             ability,
             level,
@@ -190,9 +189,9 @@ impl PokeSpec {
             gender,
             ball,
             nature,
-            ivs: StatSpread::from_ivs(ivs),
-            evs: StatSpread::from_evs(evs),
-        }
+            ivs: StatSpread::from_ivs(ivs)?,
+            evs: StatSpread::from_evs(evs)?,
+        })
     }
 }
 
