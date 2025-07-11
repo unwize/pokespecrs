@@ -4,9 +4,9 @@ use std::fs::{create_dir_all, remove_file};
 
 use crate::enums::{Generation, LearnMethod};
 use num_traits::{FromPrimitive, ToPrimitive};
+use rusqlite::{Connection, Result};
 use std::path::Path;
 use std::process::exit;
-use rusqlite::{Connection, Result};
 
 const CACHE_PATH: &str = ".pokespecrs/";
 const CACHE_FNAME: &str = "cache.db3";
@@ -94,15 +94,14 @@ pub fn get_species_id(connection: &Connection, species: &str) -> Result<i32> {
 }
 
 pub fn insert_pokemon(connection: &Connection, species: &str) -> Result<()> {
-    let stmt = connection
-        .execute(
-            format!("INSERT INTO pokemon (species) VALUES ('{}');", species).as_str(),
-            (),
-        );
+    let stmt = connection.execute(
+        format!("INSERT INTO pokemon (species) VALUES ('{}');", species).as_str(),
+        (),
+    );
 
     match stmt {
         Ok(_) => Ok(()),
-        Err(err) => {Err(err)}
+        Err(err) => Err(err),
     }
 }
 
@@ -120,7 +119,7 @@ pub fn insert_moves(connection: &Connection, moves: &Vec<Move>, species_id: i32)
     let res = connection.execute_batch(buffer.join(" ").as_str());
     match res {
         Ok(_) => Ok(()),
-        Err(err) => Err(err) // Pass error up
+        Err(err) => Err(err), // Pass error up
     }
 }
 

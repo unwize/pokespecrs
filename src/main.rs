@@ -6,13 +6,13 @@ pub mod command_logic;
 mod config;
 mod console;
 pub mod enums;
-pub mod spec;
 mod errors;
+pub mod spec;
 
 use crate::command_logic::CommandLogic;
+use crate::console::err;
 use clap::Subcommand;
 use clap::{Args, Parser};
-use crate::console::err;
 
 #[derive(Parser, Debug)]
 #[command(name = "PokeSpecRS")]
@@ -115,12 +115,8 @@ fn main() {
     println!("{:?}", args.command);
 
     let res = match &args.command {
-        Commands::Generate { .. } => {
-            command_logic::Generate.execute(args.command)
-        }
-        Commands::Cache { .. } => {
-            command_logic::Cache.execute(args.command)
-        }
+        Commands::Generate { .. } => command_logic::Generate.execute(args.command),
+        Commands::Cache { .. } => command_logic::Cache.execute(args.command),
     };
 
     if res.is_err() {

@@ -1,6 +1,6 @@
-use crate::enums::{Generation, LearnMethod};
 use crate::api::pokemon_move::{Move, MoveLearnMethod};
 use crate::console::err;
+use crate::enums::{Generation, LearnMethod};
 use std::collections::HashSet;
 use std::process::exit;
 

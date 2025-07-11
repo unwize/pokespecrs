@@ -64,13 +64,20 @@ impl StatSpread {
             for (stat, value) in stats.unwrap() {
                 if STAT_NAMES.contains(&stat.as_str()) {
                     if value > 31 {
-                        return Err(SpecError::new(SpecFailure::Iv(stat.clone(), value), None, None).into());
+                        return Err(SpecError::new(
+                            SpecFailure::Iv(stat.clone(), value),
+                            None,
+                            None,
+                        )
+                        .into());
                     }
 
                     available_stats.remove(stat.as_str());
                     _stats.insert(stat.clone(), value);
                 } else {
-                    return Err(SpecError::new(SpecFailure::InvalidStat(stat.clone()), None, None).into());
+                    return Err(
+                        SpecError::new(SpecFailure::InvalidStat(stat.clone()), None, None).into(),
+                    );
                 }
             }
         }
@@ -100,7 +107,9 @@ impl StatSpread {
                     available_stats.remove(stat.as_str());
 
                     if sum + value > 510 {
-                        return Err(SpecError::new(SpecFailure::EvMax(sum + value), None, None).into());
+                        return Err(
+                            SpecError::new(SpecFailure::EvMax(sum + value), None, None).into()
+                        );
                     }
 
                     if value > 252 {
@@ -176,7 +185,6 @@ impl PokeSpec {
         ivs: Option<HashMap<String, u16>>,
         evs: Option<HashMap<String, u16>>,
     ) -> Result<Self> {
-
         Ok(PokeSpec {
             species,
             ability,

@@ -3,12 +3,12 @@ use crate::cache::{
     del_cache_on_disk, fetch_move_methods, get_db_connection, get_species_id, insert_moves,
     insert_pokemon, is_species_cached, set_up_db,
 };
-use crate::errors::Result;
 use crate::console::{err, success};
 use crate::enums::Gender;
+use crate::errors::Result;
 use crate::spec::PokeSpec;
-use crate::{spec, CacheCommands, Commands};
-use rand::{rng, Rng};
+use crate::{CacheCommands, Commands, spec};
+use rand::{Rng, rng};
 use std::collections::HashMap;
 use std::process::exit;
 
@@ -173,7 +173,7 @@ impl CommandLogic for Generate {
                 success(format!("{}", spec?).as_str());
                 Ok(())
             }
-            _ => {Ok(())}
+            _ => Ok(()),
         }
     }
 }
@@ -186,15 +186,18 @@ impl CommandLogic for Cache {
             Commands::Cache(cache_args) => {
                 let sub_cmd = &cache_args.command;
                 match sub_cmd {
-                    CacheCommands::Check { species } => {Ok(())}
-                    CacheCommands::Enable { .. } => {Ok(())}
-                    CacheCommands::Disable { .. } => {Ok(())}
-                    CacheCommands::Clear { .. } => {del_cache_on_disk(); Ok(())},
-                    CacheCommands::Purge { species } => {Ok(())}
-                    CacheCommands::Validate {} => {Ok(())}
+                    CacheCommands::Check { species } => Ok(()),
+                    CacheCommands::Enable { .. } => Ok(()),
+                    CacheCommands::Disable { .. } => Ok(()),
+                    CacheCommands::Clear { .. } => {
+                        del_cache_on_disk();
+                        Ok(())
+                    }
+                    CacheCommands::Purge { species } => Ok(()),
+                    CacheCommands::Validate {} => Ok(()),
                 }
             }
-            _ => {Ok(())}
+            _ => Ok(()),
         }
     }
 }
