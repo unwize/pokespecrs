@@ -7,7 +7,7 @@ use thiserror::Error;
 #[diagnostic(help("No such stat. Legal stats are Attack, Defense, Special Attack, Special Defense, Speed, and HP"))]
 pub struct NoSuchStatError {
     #[label("Stat")]
-    pub(crate) stat: String
+    pub stat: String
 }
 
 #[derive(Debug, Diagnostic, Error)]
@@ -15,9 +15,9 @@ pub struct NoSuchStatError {
 #[diagnostic(help("IV values must be between 1 and 31"))]
 pub struct IVValueError {
     #[label("IV")]
-    pub(crate) stat: String,
+    pub stat: String,
     #[label("Value")]
-    pub(crate) value: u16
+    pub value: u16
 }
 
 #[derive(Debug, Diagnostic, Error)]
@@ -82,5 +82,5 @@ pub struct SpeciesLevelTooLowError {
 #[error(Spec Error)]
 #[diagnostic(help("One or more issues with this spec must be resolved!"))]
 pub struct SpecError {
-    pub(crate) related: Vec<dyn Error>
+    pub related: Vec<Box<dyn Error>>
 }

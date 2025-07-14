@@ -60,7 +60,7 @@ impl StatSpread {
         let mut _stats: HashMap<String, u16> = HashMap::new();
 
         if stats.is_some() {
-            let mut errors: Vec<dyn Error> = Vec::new();
+            let mut errors: Vec<Box<dyn Error>> = Vec::new();
 
             for (stat, value) in stats.unwrap() {
                 if STAT_NAMES.contains(&stat.as_str()) {
@@ -71,7 +71,7 @@ impl StatSpread {
                             IVValueError {
                                 stat: stat.clone(),
                                 value
-                            }
+                            }.into()
                         );
                     }
 
@@ -81,17 +81,17 @@ impl StatSpread {
                     errors.push(
                         NoSuchStatError {
                             stat: stat.clone()
-                        }
+                        }.into()
                     );
                 }
             }
 
             if errors.len() > 0 {
-                return Err(
+                Err(
                     SpecError {
                         related: errors,
                     }
-                )
+                )?
             }
         }
 
