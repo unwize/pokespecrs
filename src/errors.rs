@@ -1,87 +1,86 @@
-use crate::spec::PokeSpec;
 use std::error::Error;
-use std::fmt::{Display, Formatter};
+use miette::{Diagnostic, SourceSpan};
+use thiserror::Error;
 
-// https://doc.rust-lang.org/rust-by-example/error/multiple_error_types/boxing_errors.html
-pub type Result<T> = std::result::Result<T, Box<dyn Error>>;
-
-#[derive(Debug, Clone)]
-pub enum SpecFailure {
-    Move(String), // Name of the move
-    Level,
-    Shiny,
-    Ball,
-    Iv(String, u16),     // Name of stat, value of stat
-    Ev(String, u16),     // Name of stat, value of stat
-    EvMax(u16),          // Sum total of values
-    InvalidStat(String), // Name of stat
+#[derive(Error, Debug, Diagnostic)]
+#[error(No Such Stat)]
+#[diagnostic(help("No such stat. Legal stats are Attack, Defense, Special Attack, Special Defense, Speed, and HP"))]
+pub struct NoSuchStatError {
+    #[label("Stat")]
+    pub(crate) stat: String
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Diagnostic, Error)]
+#[error(IV Value Error)]
+#[diagnostic(help("IV values must be between 1 and 31"))]
+pub struct IVValueError {
+    #[label("IV")]
+    pub(crate) stat: String,
+    #[label("Value")]
+    pub(crate) value: u16
+}
+
+#[derive(Debug, Diagnostic, Error)]
+#[error(EV Value Error)]
+#[diagnostic(help("EV values must be between 0 and 252"))]
+pub struct EVValueError {
+    #[label("EV")]
+    stat: String,
+    #[label("Value")]
+    value: u16
+}
+
+#[derive(Debug, Diagnostic, Error)]
+#[error(EV Sum Error)]
+#[diagnostic(help("EV sum values must be between 0 and 510"))]
+pub struct EVSumError {
+    #[label("EV Sum Total")]
+    ev_sum: u16
+}
+
+#[derive(Debug, Diagnostic, Error)]
+#[error(Shiny Error)]
+#[diagnostic(help("This species cannot be obtained as a shiny!"))]
+pub struct ShinyError {
+    #[label("Species")]
+    species: String
+}
+
+#[derive(Debug, Diagnostic, Error)]
+#[error(Unlearnable Move Error)]
+#[diagnostic(help("This species cannot learn this move!"))]
+pub struct UnlearnableMoveError {
+    #[label("Species")]
+    species: String,
+    #[label("Move")]
+    pk_move: String
+}
+
+#[derive(Debug, Diagnostic, Error)]
+#[error(Move Level Too Low Error)]
+#[diagnostic(help("This species cannot learn this move at this level!"))]
+pub struct MoveTooLowError {
+    #[label("Species")]
+    species: String,
+    #[label("Move")]
+    pk_move: String,
+    #[label("Minimum Level")]
+    min_level: u16
+}
+
+#[derive(Debug, Diagnostic, Error)]
+#[error(Species Level Too Low Error)]
+#[diagnostic(help("This species evolves at a level higher than its current level!"))]
+pub struct SpeciesLevelTooLowError {
+    #[label("Species")]
+    species: String,
+    #[label("Minimum Level")]
+    min_level: u16
+}
+
+#[derive(Debug, Diagnostic, Error)]
+#[error(Spec Error)]
+#[diagnostic(help("One or more issues with this spec must be resolved!"))]
 pub struct SpecError {
-    pub kind: SpecFailure,
-    pub message: Option<String>,
-    pub context: Option<PokeSpec>,
+    pub(crate) related: Vec<dyn Error>
 }
-
-impl SpecError {
-    pub fn new(kind: SpecFailure, message: Option<String>, context: Option<PokeSpec>) -> SpecError {
-        Self {
-            kind,
-            message,
-            context,
-        }
-    }
-}
-
-pub fn explain_spec_error(err: &SpecError) -> String {
-    let ctx = err.context.clone();
-    match err.clone().kind {
-        SpecFailure::Move(mv) => {
-            format!(
-                "{} is not a valid move for {} lvl {}",
-                mv,
-                ctx.as_ref().unwrap().species,
-                ctx.as_ref().unwrap().species
-            )
-        }
-        SpecFailure::Level => {
-            format!(
-                "{} is not a valid level for {}",
-                ctx.as_ref().unwrap().level,
-                ctx.as_ref().unwrap().species
-            )
-        }
-        SpecFailure::Shiny => {
-            format!(
-                "{} cannot be obtained as a shiny!",
-                ctx.as_ref().unwrap().species
-            )
-        }
-        SpecFailure::Ball => {
-            format!(
-                "{} cannot be obtained in a {}",
-                ctx.as_ref().unwrap().species,
-                ctx.as_ref().unwrap().ball
-            )
-        }
-        SpecFailure::Iv(name, value) => {
-            format!("IV {name} must be between 1 and 31: {}", value)
-        }
-        SpecFailure::Ev(name, value) => {
-            format!("EV {name} must be between 1 and 510: {}", value)
-        }
-        SpecFailure::EvMax(value) => format!("EVs must have a sum total of less than 510: {value}"),
-        SpecFailure::InvalidStat(name) => {
-            format!("{} is not a valid stat", name)
-        }
-    }
-}
-
-impl Display for SpecError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", explain_spec_error(self))
-    }
-}
-
-impl Error for SpecError {}

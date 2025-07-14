@@ -1,12 +1,11 @@
 use crate::enums::Gender;
-use crate::errors::{Result, SpecError, SpecFailure};
 use rand::Rng;
 use std::cmp::min;
 use std::collections::{HashMap, HashSet};
+use std::error::Error;
 use std::fmt::{Display, Formatter};
-use std::process::exit;
-
-use colored::Colorize;
+use miette::Result;
+use crate::errors::{IVValueError, NoSuchStatError, SpecError};
 
 static STAT_NAMES: [&str; 6] = ["atk", "def", "spatk", "spdef", "spd", "hp"];
 pub static NATURES: [&str; 25] = [
@@ -61,26 +60,41 @@ impl StatSpread {
         let mut _stats: HashMap<String, u16> = HashMap::new();
 
         if stats.is_some() {
+            let mut errors: Vec<dyn Error> = Vec::new();
+
             for (stat, value) in stats.unwrap() {
                 if STAT_NAMES.contains(&stat.as_str()) {
                     if value > 31 {
-                        return Err(SpecError::new(
-                            SpecFailure::Iv(stat.clone(), value),
-                            None,
-                            None,
-                        )
-                        .into());
+
+                        // Collect errors in a vector and return them underneath a SpecError later
+                        errors.push(
+                            IVValueError {
+                                stat: stat.clone(),
+                                value
+                            }
+                        );
                     }
 
                     available_stats.remove(stat.as_str());
                     _stats.insert(stat.clone(), value);
                 } else {
-                    return Err(
-                        SpecError::new(SpecFailure::InvalidStat(stat.clone()), None, None).into(),
+                    errors.push(
+                        NoSuchStatError {
+                            stat: stat.clone()
+                        }
                     );
                 }
             }
+
+            if errors.len() > 0 {
+                return Err(
+                    SpecError {
+                        related: errors,
+                    }
+                )
+            }
         }
+
 
         let mut rng = rand::rng();
         for stat in available_stats {
@@ -107,19 +121,17 @@ impl StatSpread {
                     available_stats.remove(stat.as_str());
 
                     if sum + value > 510 {
-                        return Err(
-                            SpecError::new(SpecFailure::EvMax(sum + value), None, None).into()
-                        );
+                        // EV Sum exceeds limit
                     }
 
                     if value > 252 {
-                        return Err(SpecError::new(SpecFailure::Ev(stat, value), None, None).into());
+                        // Individual EV value exceeds limit
                     }
                     sum = sum + value;
 
                     _stats.insert(String::from(stat), value);
                 } else {
-                    return Err(SpecError::new(SpecFailure::InvalidStat(stat), None, None).into());
+                    // Invalid stat name
                 }
             }
         }

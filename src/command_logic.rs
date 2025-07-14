@@ -5,12 +5,13 @@ use crate::cache::{
 };
 use crate::console::{err, success};
 use crate::enums::Gender;
-use crate::errors::Result;
 use crate::spec::PokeSpec;
 use crate::{CacheCommands, Commands, spec};
 use rand::{Rng, rng};
 use std::collections::HashMap;
 use std::process::exit;
+
+use miette::{miette, Result};
 
 /// A trait that defines the interface for executing command logic
 pub trait CommandLogic {
@@ -170,7 +171,7 @@ impl CommandLogic for Generate {
                         println!("{:?}", methods.unwrap())
                     }
                 }
-                success(format!("{}", spec?).as_str());
+                success(format!("{}", spec.unwrap()).as_str());
                 Ok(())
             }
             _ => Ok(()),
