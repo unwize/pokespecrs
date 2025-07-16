@@ -86,6 +86,7 @@ pub fn get_species_id(connection: &Connection, species: &str) -> Result<i32> {
     match stmt {
         Ok(mut res) => res.query_one([], |row| row.get(0)),
         Err(err) => {
+            // TODO: Is this a candidate for a miette error?
             println!("Failed to fetch ID for species {}", species);
             println!("{}", err);
             exit(-1)

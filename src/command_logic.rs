@@ -164,6 +164,7 @@ impl CommandLogic for Generate {
                     if methods.is_ok() {
                         let methods = methods.unwrap();
                         if methods.len() < 1 {
+                            // TODO: Replace with proper error
                             err(format!("{poke_move} is not a valid move for {species}").as_str());
                             exit(-1)
                         }
