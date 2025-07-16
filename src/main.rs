@@ -13,7 +13,7 @@ use crate::command_logic::CommandLogic;
 use crate::console::err;
 use clap::Subcommand;
 use clap::{Args, Parser};
-use miette::{miette, Result};
+use miette::{Result, miette};
 
 #[derive(Parser, Debug)]
 #[command(name = "PokeSpecRS")]
@@ -110,7 +110,7 @@ fn print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>());
 }
 
-fn main() -> Result<()>{
+fn main() -> Result<()> {
     let args = Cli::parse();
 
     println!("{:?}", args.command);

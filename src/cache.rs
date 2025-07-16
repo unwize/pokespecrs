@@ -66,7 +66,7 @@ pub fn set_up_db(connection: &Connection) -> Result<()> {
 
 /// Check if a given species of pokemon has already been cached
 pub fn is_species_cached(connection: &Connection, species: &str) -> bool {
-    let mut stmt =
+    let stmt =
         connection.prepare(format!("SELECT 1 FROM pokemon WHERE species = '{species}'").as_str());
 
     match stmt {
@@ -80,7 +80,7 @@ pub fn is_species_cached(connection: &Connection, species: &str) -> bool {
 }
 
 pub fn get_species_id(connection: &Connection, species: &str) -> Result<i32> {
-    let mut stmt =
+    let stmt =
         connection.prepare(format!("SELECT * FROM pokemon WHERE species = '{species}'").as_str());
 
     match stmt {

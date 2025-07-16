@@ -11,7 +11,8 @@ use rand::{Rng, rng};
 use std::collections::HashMap;
 use std::process::exit;
 
-use miette::{miette, Result};
+use crate::errors::{SpecError, SpecErrors};
+use miette::{Result, miette};
 
 /// A trait that defines the interface for executing command logic
 pub trait CommandLogic {
@@ -129,9 +130,10 @@ impl CommandLogic for Generate {
                     } else {
                         spec::NATURES[rng.random_range(0..spec::NATURES.len())].to_string()
                     },
-                    Some(ivs),
+                    Some(ivs),  // TODO: Refactor to allow ivs and evs to both throw errors
                     Some(evs),
                 );
+
 
                 let conn = get_db_connection();
                 set_up_db(&conn).expect("Unable to set up cache!");
@@ -158,20 +160,36 @@ impl CommandLogic for Generate {
                             .expect("Error when inserting moves into cache!");
                     }
                 }
+                
+                let mut errors : Vec<SpecErrors> = Vec::new();
 
                 for poke_move in moveset {
-                    let mut methods = fetch_move_methods(&conn, species_id, poke_move);
+                    let methods = fetch_move_methods(&conn, species_id, poke_move);
                     if methods.is_ok() {
                         let methods = methods.unwrap();
                         if methods.len() < 1 {
-                            // TODO: Replace with proper error
-                            err(format!("{poke_move} is not a valid move for {species}").as_str());
-                            exit(-1)
-                        }
+                            errors.push(SpecErrors::UnlearnableMoveError {
+                                    species: species.clone(),
+                                    pk_move: poke_move.clone(),
+                                });
+                            }
                     } else {
                         println!("{:?}", methods.unwrap())
                     }
                 }
+
+                if !errors.is_empty() || spec.is_err() {
+                    if spec.is_err() {
+                        errors.append(&mut spec.err().unwrap().causes);
+
+                    }
+                    return Err(
+                        SpecError {
+                            causes: errors,
+                        }
+                    )?
+                }
+
                 success(format!("{}", spec?).as_str());
                 Ok(())
             }
