@@ -5,7 +5,7 @@ use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use miette::Result;
-use crate::errors::{IVValueError, NoSuchStatError, SpecError};
+use crate::errors::{SpecErrors, SpecError};
 
 static STAT_NAMES: [&str; 6] = ["atk", "def", "spatk", "spdef", "spd", "hp"];
 pub static NATURES: [&str; 25] = [
@@ -60,7 +60,7 @@ impl StatSpread {
         let mut _stats: HashMap<String, u16> = HashMap::new();
 
         if stats.is_some() {
-            let mut errors: Vec<Box<dyn Error>> = Vec::new();
+            let mut errors: Vec<SpecErrors> = Vec::new();
 
             for (stat, value) in stats.unwrap() {
                 if STAT_NAMES.contains(&stat.as_str()) {
@@ -68,10 +68,10 @@ impl StatSpread {
 
                         // Collect errors in a vector and return them underneath a SpecError later
                         errors.push(
-                            IVValueError {
+                            SpecErrors::IvValueError {
                                 stat: stat.clone(),
-                                value
-                            }.into()
+                                value: value.to_string(),
+                            }
                         );
                     }
 
@@ -79,9 +79,9 @@ impl StatSpread {
                     _stats.insert(stat.clone(), value);
                 } else {
                     errors.push(
-                        NoSuchStatError {
+                        SpecErrors::NoSuchStatError {
                             stat: stat.clone()
-                        }.into()
+                        }
                     );
                 }
             }
