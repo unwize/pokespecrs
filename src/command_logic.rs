@@ -171,7 +171,7 @@ impl CommandLogic for Generate {
                         println!("{:?}", methods.unwrap())
                     }
                 }
-                success(format!("{}", spec.unwrap()).as_str());
+                success(format!("{}", spec?).as_str());
                 Ok(())
             }
             _ => Ok(()),

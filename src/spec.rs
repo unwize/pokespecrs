@@ -1,11 +1,10 @@
 use crate::enums::Gender;
+use crate::errors::{SpecError, SpecErrors};
+use miette::{Result};
 use rand::Rng;
 use std::cmp::min;
 use std::collections::{HashMap, HashSet};
-use std::error::Error;
 use std::fmt::{Display, Formatter};
-use miette::Result;
-use crate::errors::{SpecErrors, SpecError};
 
 static STAT_NAMES: [&str; 6] = ["atk", "def", "spatk", "spdef", "spd", "hp"];
 pub static NATURES: [&str; 25] = [
@@ -87,11 +86,10 @@ impl StatSpread {
             }
 
             if errors.len() > 0 {
-                Err(
-                    SpecError {
-                        related: errors,
-                    }
-                )?
+                    Err(SpecError {
+                        causes: errors,
+                    })?
+
             }
         }
 
