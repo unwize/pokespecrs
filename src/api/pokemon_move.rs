@@ -23,12 +23,12 @@ impl Display for MoveLearnMethod {
 }
 
 #[derive(Debug, Eq, PartialEq, Clone)]
-pub struct Move {
+pub struct PokeMove {
     pub name: String,
     pub generations: HashSet<MoveLearnMethod>,
 }
 
-impl Display for Move {
+impl Display for PokeMove {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} |{}|", self.name, self.generations.iter().format(","))
     }

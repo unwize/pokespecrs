@@ -1,4 +1,4 @@
-use crate::api::pokemon_move::{Move, MoveLearnMethod};
+use crate::api::pokemon_move::{PokeMove, MoveLearnMethod};
 use crate::console::err;
 use crate::enums::{Generation, LearnMethod};
 use std::collections::HashSet;
@@ -22,9 +22,9 @@ pub fn get_pokemon(species: &str) -> serde_json::Value {
 }
 
 /// For a given Pokemon JSON object, extract a structured list of moves.
-pub fn get_pokemon_moves(pokemon_json: &serde_json::Value) -> Vec<Move> {
+pub fn get_pokemon_moves(pokemon_json: &serde_json::Value) -> Vec<PokeMove> {
     // The returned list of Move structs
-    let mut moves: Vec<Move> = Vec::new();
+    let mut moves: Vec<PokeMove> = Vec::new();
 
     // Iterate through the list of Move JSON objects
     for pokemon_move in pokemon_json["moves"].as_array().unwrap() {
@@ -53,7 +53,7 @@ pub fn get_pokemon_moves(pokemon_json: &serde_json::Value) -> Vec<Move> {
             });
         }
 
-        moves.push(Move {
+        moves.push(PokeMove {
             name: String::from(pokemon_move["move"]["name"].as_str().unwrap()),
             generations: methods,
         });

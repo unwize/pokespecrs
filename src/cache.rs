@@ -1,4 +1,4 @@
-use crate::api::pokemon_move::{Move, MoveLearnMethod};
+use crate::api::pokemon_move::{PokeMove, MoveLearnMethod};
 use std::collections::HashSet;
 use std::fs::{create_dir_all, remove_file};
 
@@ -106,7 +106,7 @@ pub fn insert_pokemon(connection: &Connection, species: &str) -> Result<()> {
     }
 }
 
-pub fn insert_moves(connection: &Connection, moves: &Vec<Move>, species_id: i32) -> Result<()> {
+pub fn insert_moves(connection: &Connection, moves: &Vec<PokeMove>, species_id: i32) -> Result<()> {
     let mut buffer: Vec<String> = vec![String::from("BEGIN;")];
 
     for pk_move in moves {
