@@ -1,6 +1,6 @@
 use crate::enums::Gender;
 use crate::errors::{SpecError, SpecErrors};
-use miette::{Result};
+use miette::Result;
 use rand::Rng;
 use std::cmp::min;
 use std::collections::{HashMap, HashSet};
@@ -54,7 +54,7 @@ impl StatSpread {
         }
     }
 
-    fn from_ivs(stats: Option<HashMap<String, u16>>) -> Result<Self> {
+    fn from_ivs(stats: Option<HashMap<String, u16>>) -> Result<Self, SpecError> {
         let mut available_stats = HashSet::from(STAT_NAMES.clone());
         let mut _stats: HashMap<String, u16> = HashMap::new();
 
@@ -64,35 +64,24 @@ impl StatSpread {
             for (stat, value) in stats.unwrap() {
                 if STAT_NAMES.contains(&stat.as_str()) {
                     if value > 31 {
-
                         // Collect errors in a vector and return them underneath a SpecError later
-                        errors.push(
-                            SpecErrors::IvValueError {
-                                stat: stat.clone(),
-                                value: value.to_string(),
-                            }
-                        );
+                        errors.push(SpecErrors::IvValueError {
+                            stat: stat.clone(),
+                            value: value.to_string(),
+                        });
                     }
 
                     available_stats.remove(stat.as_str());
                     _stats.insert(stat.clone(), value);
                 } else {
-                    errors.push(
-                        SpecErrors::NoSuchStatError {
-                            stat: stat.clone()
-                        }
-                    );
+                    errors.push(SpecErrors::NoSuchStatError { stat: stat.clone() });
                 }
             }
 
             if errors.len() > 0 {
-                    Err(SpecError {
-                        causes: errors,
-                    })?
-
+                return Err(SpecError { causes: errors })
             }
         }
-
 
         let mut rng = rand::rng();
         for stat in available_stats {
@@ -106,12 +95,14 @@ impl StatSpread {
         })
     }
 
-    fn from_evs(stats: Option<HashMap<String, u16>>) -> Result<Self> {
+    fn from_evs(stats: Option<HashMap<String, u16>>) -> Result<Self, SpecError> {
         let mut available_stats = HashSet::from(STAT_NAMES.clone());
         let mut _stats: HashMap<String, u16> = HashMap::new();
         let mut sum: u16 = 0;
 
         if !stats.is_none() {
+            let mut errors: Vec<SpecErrors> = Vec::new();
+
             // Pull user-defined stat values out of the provided hashmap
             for (stat, value) in stats.unwrap() {
                 if STAT_NAMES.contains(&stat.as_str()) {
@@ -119,18 +110,27 @@ impl StatSpread {
                     available_stats.remove(stat.as_str());
 
                     if sum + value > 510 {
-                        // EV Sum exceeds limit
+                        errors.push(SpecErrors::EvSumError {
+                            ev_sum: (sum + value).to_string(),
+                        })
                     }
 
                     if value > 252 {
-                        // Individual EV value exceeds limit
+                        errors.push(SpecErrors::EvValueError {
+                            stat: stat.clone(),
+                            value: value.to_string(),
+                        })
                     }
                     sum = sum + value;
 
                     _stats.insert(String::from(stat), value);
                 } else {
-                    // Invalid stat name
+                    errors.push(SpecErrors::NoSuchStatError { stat: stat.clone() })
                 }
+            }
+
+            if errors.len() > 0 {
+                return Err(SpecError { causes: errors })
             }
         }
 
@@ -194,7 +194,7 @@ impl PokeSpec {
         nature: String,
         ivs: Option<HashMap<String, u16>>,
         evs: Option<HashMap<String, u16>>,
-    ) -> Result<Self> {
+    ) -> Result<Self, SpecError> {
         Ok(PokeSpec {
             species,
             ability,
