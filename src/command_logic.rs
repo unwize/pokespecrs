@@ -1,7 +1,7 @@
 use crate::api::{get_pokemon, get_pokemon_moves};
 use crate::cache::{
     del_cache_on_disk, fetch_move_methods, get_db_connection, get_species_id, insert_moves,
-    insert_pokemon, is_species_cached, set_up_db,
+    insert_pokemon, is_learnable_move, is_species_cached, set_up_db,
 };
 use crate::console::{err, success};
 use crate::enums::Gender;
@@ -130,10 +130,9 @@ impl CommandLogic for Generate {
                     } else {
                         spec::NATURES[rng.random_range(0..spec::NATURES.len())].to_string()
                     },
-                    Some(ivs),  // TODO: Refactor to allow ivs and evs to both throw errors
+                    Some(ivs), // TODO: Refactor to allow ivs and evs to both throw errors
                     Some(evs),
                 );
-
 
                 let conn = get_db_connection();
                 set_up_db(&conn).expect("Unable to set up cache!");
@@ -160,34 +159,26 @@ impl CommandLogic for Generate {
                             .expect("Error when inserting moves into cache!");
                     }
                 }
-                
-                let mut errors : Vec<SpecErrors> = Vec::new();
+
+                let mut errors: Vec<SpecErrors> = Vec::new();
 
                 for poke_move in moveset {
                     let methods = fetch_move_methods(&conn, species_id, poke_move);
                     if methods.is_ok() {
-                        let methods = methods.unwrap();
-                        if methods.len() < 1 {
-                            errors.push(SpecErrors::UnlearnableMoveError {
-                                    species: species.clone(),
-                                    pk_move: poke_move.clone(),
-                                });
-                            }
+                        match is_learnable_move(species, poke_move, *level, &methods?) {
+                            Err(e) => errors.push(e),
+                            _ => {}
+                        }
                     } else {
-                        println!("{:?}", methods.unwrap())
+                        println!("{:?}", methods?)
                     }
                 }
 
                 if !errors.is_empty() || spec.is_err() {
                     if spec.is_err() {
                         errors.append(&mut spec.err().unwrap().causes);
-
                     }
-                    return Err(
-                        SpecError {
-                            causes: errors,
-                        }
-                    )?
+                    return Err(SpecError { causes: errors })?;
                 }
 
                 success(format!("{}", spec?).as_str());

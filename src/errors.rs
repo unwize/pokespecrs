@@ -1,7 +1,7 @@
 use miette::Diagnostic;
 use thiserror::Error;
 
-#[derive(Debug, Error, Diagnostic)]
+#[derive(Debug, Diagnostic, Error)]
 pub(crate) enum SpecErrors {
     #[error("No such stat: {stat}")]
     #[diagnostic(help(
@@ -10,7 +10,7 @@ pub(crate) enum SpecErrors {
     NoSuchStatError { stat: String },
 
     #[error("IV value error! {stat}: {value}")]
-    #[diagnostic(help("IV values must be between 1 and 31"))]
+    #[diagnostic(help("IV values must be between 0 and 31"))]
     IvValueError { stat: String, value: String },
 
     #[error("EV value error! {stat}: {value}")]
@@ -29,12 +29,15 @@ pub(crate) enum SpecErrors {
     #[diagnostic(help("This species cannot learn this move!"))]
     UnlearnableMoveError { species: String, pk_move: String },
 
-    #[error("Move level too low! {species}: lvl {level}, {pk_move}")]
+    #[error(
+        "Move level too low! {species}: lvl {level}, {pk_move}. Minimum learn level is {min_level}"
+    )]
     #[diagnostic(help("This species cannot learn this move at this level!"))]
     LevelTooLowMoveError {
         species: String,
         pk_move: String,
         level: String,
+        min_level: String,
     },
 
     #[error("Species level too low! {species}: lvl {level}")]

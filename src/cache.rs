@@ -1,10 +1,13 @@
-use crate::api::pokemon_move::{PokeMove, MoveLearnMethod};
+use crate::api::pokemon_move::{MoveLearnMethod, PokeMove};
 use std::collections::HashSet;
 use std::fs::{create_dir_all, remove_file};
 
 use crate::enums::{Generation, LearnMethod};
+use crate::errors::SpecErrors;
+use crate::errors::SpecErrors::{LevelTooLowMoveError, UnlearnableMoveError};
+use miette::{IntoDiagnostic, Result};
 use num_traits::{FromPrimitive, ToPrimitive};
-use rusqlite::{Connection, Result};
+use rusqlite::Connection;
 use std::path::Path;
 use std::process::exit;
 
@@ -40,16 +43,19 @@ pub fn del_cache_on_disk() {
 pub fn set_up_db(connection: &Connection) -> Result<()> {
     println!("Initializing cache... This will happen only once!");
 
-    connection.execute(
-        "CREATE TABLE IF NOT EXISTS pokemon (
+    connection
+        .execute(
+            "CREATE TABLE IF NOT EXISTS pokemon (
                 id INTEGER PRIMARY KEY,
                 species VARCHAR NOT NULL COLLATE NOCASE
             );",
-        (),
-    )?;
+            (),
+        )
+        .into_diagnostic()?;
 
-    connection.execute(
-        "CREATE TABLE IF NOT EXISTS moves (
+    connection
+        .execute(
+            "CREATE TABLE IF NOT EXISTS moves (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR NOT NULL COLLATE NOCASE,
                 species_id INTEGER NOT NULL,
@@ -58,8 +64,9 @@ pub fn set_up_db(connection: &Connection) -> Result<()> {
                 generation INTEGER NOT NULL,
                 FOREIGN KEY(species_id) REFERENCES pokemon(id)
         );",
-        (),
-    )?;
+            (),
+        )
+        .into_diagnostic()?;
 
     Ok(())
 }
@@ -84,7 +91,7 @@ pub fn get_species_id(connection: &Connection, species: &str) -> Result<i32> {
         connection.prepare(format!("SELECT * FROM pokemon WHERE species = '{species}'").as_str());
 
     match stmt {
-        Ok(mut res) => res.query_one([], |row| row.get(0)),
+        Ok(mut res) => res.query_one([], |row| row.get(0)).into_diagnostic(),
         Err(err) => {
             // TODO: Is this a candidate for a miette error?
             println!("Failed to fetch ID for species {}", species);
@@ -102,7 +109,7 @@ pub fn insert_pokemon(connection: &Connection, species: &str) -> Result<()> {
 
     match stmt {
         Ok(_) => Ok(()),
-        Err(err) => Err(err),
+        Err(err) => Err(err).into_diagnostic(),
     }
 }
 
@@ -120,7 +127,7 @@ pub fn insert_moves(connection: &Connection, moves: &Vec<PokeMove>, species_id: 
     let res = connection.execute_batch(buffer.join(" ").as_str());
     match res {
         Ok(_) => Ok(()),
-        Err(err) => Err(err), // Pass error up
+        Err(err) => Err(err).into_diagnostic(), // Pass error up
     }
 }
 
@@ -140,19 +147,69 @@ pub fn fetch_move_methods(
                 // Yes, I know I'm shadowing the variable in the outer scope. It's fine.
                 Ok(mut moves_sql) => {
                     // Must use weird next() interface as Rows object does not implement Iterator trait
-                    while let Some(row) = moves_sql.next()? {
+                    while let Some(row) = moves_sql.next().into_diagnostic()? {
                         // idx corresponds to the order in which columns are declared in table creation statement
                         moves.insert(MoveLearnMethod {
-                            method: LearnMethod::from_i32(row.get(3)?).unwrap(),
-                            level_learned_at: row.get(4)?,
-                            generation: Generation::from_i32(row.get(5)?).unwrap(),
+                            method: LearnMethod::from_i32(row.get(3).into_diagnostic()?).unwrap(),
+                            level_learned_at: row.get(4).into_diagnostic()?,
+                            generation: Generation::from_i32(row.get(5).into_diagnostic()?)
+                                .unwrap(),
                         });
                     }
                     Ok(moves)
                 }
-                Err(e) => Err(e), // Pass the error up
+                Err(e) => Err(e).into_diagnostic(), // Pass the error up
             }
         }
-        Err(e) => Err(e), // Pass the error up
+        Err(e) => Err(e).into_diagnostic(), // Pass the error up
     }
+}
+
+pub fn is_learnable_move(
+    species: &str,
+    pk_move: &str,
+    pk_level: u8,
+    methods: &HashSet<MoveLearnMethod>,
+) -> Result<(), SpecErrors> {
+    // No methods mean the move is not learnable at all
+    if methods.len() < 1 {
+        Err(UnlearnableMoveError {
+            species: String::from(species),
+            pk_move: String::from(pk_move),
+        })?
+    }
+
+    let mut min_learn_level: Option<u8> = None;
+    for method in methods {
+        // Alternative learn methods mean the move is learnable regardless of level
+        if [LearnMethod::Egg, LearnMethod::Machine, LearnMethod::Tutor].contains(&method.method) {
+            return Ok(());
+        }
+
+        // Level-based learning must work number-wise, else move can't be learned at all
+        if method.method == LearnMethod::LevelUp {
+            let method_level = method.level_learned_at.clone().unwrap();
+            if method_level <= pk_level {
+                return Ok(());
+            }
+
+            if min_learn_level == None {
+                min_learn_level = Some(method_level);
+            } else {
+                let lvl = min_learn_level.unwrap();
+                if method_level < lvl {
+                    min_learn_level = Some(method_level);
+                } else {
+                    min_learn_level = Some(lvl);
+                }
+            }
+        }
+    }
+
+    Err(LevelTooLowMoveError {
+        species: String::from(species),
+        pk_move: String::from(pk_move),
+        level: pk_level.to_string(),
+        min_level: min_learn_level.unwrap().to_string(),
+    })?
 }

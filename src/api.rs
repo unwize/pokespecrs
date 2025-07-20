@@ -1,4 +1,4 @@
-use crate::api::pokemon_move::{PokeMove, MoveLearnMethod};
+use crate::api::pokemon_move::{MoveLearnMethod, PokeMove};
 use crate::console::err;
 use crate::enums::{Generation, LearnMethod};
 use std::collections::HashSet;

@@ -79,7 +79,7 @@ impl StatSpread {
             }
 
             if errors.len() > 0 {
-                return Err(SpecError { causes: errors })
+                return Err(SpecError { causes: errors });
             }
         }
 
@@ -130,7 +130,7 @@ impl StatSpread {
             }
 
             if errors.len() > 0 {
-                return Err(SpecError { causes: errors })
+                return Err(SpecError { causes: errors });
             }
         }
 
