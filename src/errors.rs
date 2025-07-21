@@ -1,4 +1,5 @@
 use miette::Diagnostic;
+use std::ops::Add;
 use thiserror::Error;
 
 #[derive(Debug, Diagnostic, Error)]
@@ -51,4 +52,14 @@ pub(crate) enum SpecErrors {
 pub struct SpecError {
     #[related]
     pub causes: Vec<SpecErrors>,
+}
+
+impl Add<SpecError> for SpecError {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        SpecError {
+            causes: self.causes.into_iter().chain(rhs.causes).collect(),
+        }
+    }
 }
