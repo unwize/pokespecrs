@@ -129,7 +129,6 @@ impl StatSpread {
         let available_stats: HashSet<String> =
             HashSet::from(STAT_NAMES.clone().map(|x| x.to_string()));
         let mut _stats: HashMap<String, u16> = HashMap::new();
-        let mut rng = rand::rng();
         let mut sum: u16 = 0;
 
         let mut errors: Vec<SpecErrors> = Vec::new();
@@ -162,9 +161,7 @@ impl StatSpread {
                 sum = sum + value;
                 _stats.insert(stat.clone(), value);
             } else {
-                let value = rng.random_range(0..min(stat_max, sum_max - sum) + 1);
-                sum = sum + value;
-                _stats.insert(stat.clone(), value);
+                _stats.insert(stat.clone(), 0);
             }
         }
 
