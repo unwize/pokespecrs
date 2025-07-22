@@ -198,8 +198,6 @@ impl CommandLogic for Cache {
                 let sub_cmd = &cache_args.command;
                 match sub_cmd {
                     CacheCommands::Check { species } => Ok(()),
-                    CacheCommands::Enable { .. } => Ok(()),
-                    CacheCommands::Disable { .. } => Ok(()),
                     CacheCommands::Clear { .. } => {
                         del_cache_on_disk();
                         Ok(())

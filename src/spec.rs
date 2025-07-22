@@ -198,19 +198,19 @@ impl Display for StatSpread {
 
 #[derive(Clone, Debug)]
 pub struct PokeSpec {
-    pub species: String,
-    pub ability: String,
-    pub level: u8, // Max of 100
-    pub nickname: Option<String>,
-    pub shiny: bool,
-    pub ot: String,
-    pub tid: usize,
-    pub sid: usize,
-    pub gender: Gender,
-    pub ball: String,
-    pub nature: String,
-    pub ivs: StatSpread, // Max of 31 per stat, no actual stat total
-    pub evs: StatSpread, // Max of 252 per stat, with a total of 510
+    species: String,
+    ability: String,
+    level: u8, // Max of 100
+    nickname: Option<String>,
+    shiny: bool,
+    ot: String,
+    tid: usize,
+    sid: usize,
+    gender: Gender,
+    ball: String,
+    nature: String,
+    ivs: StatSpread, // Max of 31 per stat, no actual stat total
+    evs: StatSpread, // Max of 252 per stat, with a total of 510
 }
 
 impl PokeSpec {

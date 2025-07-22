@@ -3,17 +3,20 @@ extern crate num_derive;
 mod api;
 mod cache;
 pub mod command_logic;
-mod config;
 mod console;
 pub mod enums;
 mod errors;
 pub mod spec;
 
 use crate::command_logic::CommandLogic;
-use crate::console::err;
 use clap::Subcommand;
 use clap::{Args, Parser};
-use miette::{Result, miette};
+use figment::{
+    Figment,
+    providers::{Format, Json},
+};
+use figment::providers::Serialized;
+use miette::{IntoDiagnostic, Result};
 
 #[derive(Parser, Debug)]
 #[command(name = "PokeSpecRS")]
@@ -98,8 +101,6 @@ struct CacheArgs {
 
 #[derive(Debug, Subcommand, Clone)]
 enum CacheCommands {
-    Enable {},
-    Disable {},
     Clear {},
     Check { species: String },
     Purge { species: String },
