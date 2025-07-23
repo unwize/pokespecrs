@@ -1,18 +1,13 @@
-use crate::api::{get_pokemon, get_pokemon_moves};
-use crate::cache::{
-    del_cache_on_disk, fetch_move_methods, get_db_connection, get_species_id, insert_moves,
-    insert_pokemon, is_learnable_move, is_species_cached, set_up_db,
-};
-use crate::console::{err, success};
+use crate::api::{get_pokemon, get_pokemon_abilities, get_pokemon_moves};
+use crate::cache::{del_cache_on_disk, fetch_move_methods, get_db_connection, get_species_id, insert_abilities, insert_moves, insert_pokemon, is_species_cached, set_up_db};
+use crate::console::success;
 use crate::enums::Gender;
-use crate::spec::PokeSpec;
+use crate::errors::{SpecError, SpecErrors};
+use crate::spec::{PokeSpec, is_learnable_move};
 use crate::{CacheCommands, Commands, spec};
+use miette::Result;
 use rand::{Rng, rng};
 use std::collections::HashMap;
-use std::process::exit;
-
-use crate::errors::{SpecError, SpecErrors};
-use miette::{Result, miette};
 
 /// A trait that defines the interface for executing command logic
 pub trait CommandLogic {
@@ -143,20 +138,23 @@ impl CommandLogic for Generate {
 
                 match is_species_cached(&conn, species) {
                     true => {
-                        species_id = get_species_id(&conn, &species).unwrap();
+                        species_id = get_species_id(&conn, &species)?;
                     }
                     false => {
                         println!(
                             "Downloading and caching moves... This will only happen once per Pokemon!"
                         );
-                        let moves = get_pokemon_moves(&get_pokemon(&species));
+                        let pokemon_payload = get_pokemon(species);
+                        let moves = get_pokemon_moves(&pokemon_payload);
+                        let abilities = get_pokemon_abilities(&pokemon_payload);
 
                         insert_pokemon(&conn, species)
                             .expect("Error when inserting species into cache!");
-                        species_id = get_species_id(&conn, &species).unwrap();
+                        species_id = get_species_id(&conn, &species)?;
                         println!("Species ID for {species} is {species_id}");
                         insert_moves(&conn, &moves, species_id)
                             .expect("Error when inserting moves into cache!");
+                        insert_abilities(&conn, &abilities, species_id)?;
                     }
                 }
 

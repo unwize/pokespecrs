@@ -11,11 +11,11 @@ pub mod spec;
 use crate::command_logic::CommandLogic;
 use clap::Subcommand;
 use clap::{Args, Parser};
+use figment::providers::Serialized;
 use figment::{
     Figment,
     providers::{Format, Json},
 };
-use figment::providers::Serialized;
 use miette::{IntoDiagnostic, Result};
 
 #[derive(Parser, Debug)]

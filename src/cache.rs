@@ -3,8 +3,6 @@ use std::collections::HashSet;
 use std::fs::{create_dir_all, remove_file};
 
 use crate::enums::{Generation, LearnMethod};
-use crate::errors::SpecErrors;
-use crate::errors::SpecErrors::{LevelTooLowMoveError, UnlearnableMoveError};
 use miette::{IntoDiagnostic, Result};
 use num_traits::{FromPrimitive, ToPrimitive};
 use rusqlite::Connection;
@@ -67,6 +65,23 @@ pub fn set_up_db(connection: &Connection) -> Result<()> {
             (),
         )
         .into_diagnostic()?;
+
+    connection
+        .execute(
+            "CREATE TABLE IF NOT EXISTS abilities (
+            id INTEGER PRIMARY KEY,\
+            name VARCHAR NOT NULL COLLATE NOCASE,\
+             species_id INTEGER NOT NULL,
+            FOREIGN KEY(species_id) REFERENCES pokemon(id)
+        );",
+            (),
+        )
+        .into_diagnostic()?;
+
+    connection.execute(
+        "CREATE TABLE IF NOT EXISTS balls (id INTEGER PRIMARY KEY,\
+        name VARCHAR NOT NULL COLLATE NOCASE);", ()
+    ).into_diagnostic()?;
 
     Ok(())
 }
@@ -165,51 +180,83 @@ pub fn fetch_move_methods(
     }
 }
 
-pub fn is_learnable_move(
-    species: &str,
-    pk_move: &str,
-    pk_level: u8,
-    methods: &HashSet<MoveLearnMethod>,
-) -> Result<(), SpecErrors> {
-    // No methods mean the move is not learnable at all
-    if methods.len() < 1 {
-        Err(UnlearnableMoveError {
-            species: String::from(species),
-            pk_move: String::from(pk_move),
-        })?
+pub fn insert_abilities(conn: &Connection, abilities: &Vec<String>, species_id: i32) -> Result<()> {
+    let mut buffer: Vec<String> = vec![String::from("BEGIN;")];
+
+    for ability in abilities {
+            buffer.push(format!("INSERT INTO abilities (name, species_id) VALUES ('{ability}', '{species_id}');", ))
     }
 
-    let mut min_learn_level: Option<u8> = None;
-    for method in methods {
-        // Alternative learn methods mean the move is learnable regardless of level
-        if [LearnMethod::Egg, LearnMethod::Machine, LearnMethod::Tutor].contains(&method.method) {
-            return Ok(());
-        }
+    buffer.push(String::from("COMMIT;"));
 
-        // Level-based learning must work number-wise, else move can't be learned at all
-        if method.method == LearnMethod::LevelUp {
-            let method_level = method.level_learned_at.clone().unwrap();
-            if method_level <= pk_level {
-                return Ok(());
-            }
+    let res = conn.execute_batch(buffer.join(" ").as_str());
+    match res {
+        Ok(_) => Ok(()),
+        Err(err) => Err(err).into_diagnostic(), // Pass error up
+    }
+}
 
-            if min_learn_level == None {
-                min_learn_level = Some(method_level);
-            } else {
-                let lvl = min_learn_level.unwrap();
-                if method_level < lvl {
-                    min_learn_level = Some(method_level);
-                } else {
-                    min_learn_level = Some(lvl);
+pub fn fetch_abilities(conn: &Connection, species_id: i32) -> Result<HashSet<String>> {
+    let stmt = conn.prepare("SELECT * FROM abilities WHERE species_id = ?1;");
+
+    match stmt {
+        Ok(mut res) => {
+            let mut abilities:HashSet<String> = HashSet::new();
+            let ability_sql = res.query(rusqlite::params![species_id]);
+
+            match ability_sql {
+                Ok(mut ability_sql) => {
+                    // Must use weird next() interface as Rows object does not implement Iterator trait
+                    while let Some(row) = ability_sql.next().into_diagnostic()? {
+                        // idx corresponds to the order in which columns are declared in table creation statement
+                        abilities.insert(row.get(1).into_diagnostic()?);
+                    }
+                    Ok(abilities)
                 }
+
+                Err(e) => Err(e).into_diagnostic(),
             }
         }
+
+        Err(e) => Err(e).into_diagnostic(),
+    }
+}
+
+pub fn insert_balls(conn: &Connection, balls: HashSet<String>) -> Result<()>{
+    let mut buffer: Vec<String> = vec![String::from("BEGIN;")];
+
+    for ball in balls {
+        buffer.push(format!("INSERT INTO balls (name) VALUES ('{ball}');", ))
     }
 
-    Err(LevelTooLowMoveError {
-        species: String::from(species),
-        pk_move: String::from(pk_move),
-        level: pk_level.to_string(),
-        min_level: min_learn_level.unwrap().to_string(),
-    })?
+    buffer.push(String::from("COMMIT;"));
+
+    let res = conn.execute_batch(buffer.join(" ").as_str());
+    match res {
+        Ok(_) => Ok(()),
+        Err(err) => Err(err).into_diagnostic(), // Pass error up
+    }
+}
+
+pub fn fetch_balls(conn: &Connection) -> Result<HashSet<String>> {
+    let stmt = conn.prepare("SELECT * FROM balls");
+
+    match stmt {
+        Ok(mut res) => {
+            let mut balls: HashSet<String> = HashSet::new();
+            let mut balls_sql = res.query(rusqlite::params![]);
+
+            match balls_sql {
+                Ok(mut balls_sql) => {
+                    while let Some(row) = balls_sql.next().into_diagnostic()? {
+                        balls.insert(row.get(1).into_diagnostic()?);
+                    }
+                    Ok(balls)
+                }
+                Err(e) => Err(e).into_diagnostic(),
+            }
+
+        }
+        Err(e) => Err(e).into_diagnostic(),
+    }
 }

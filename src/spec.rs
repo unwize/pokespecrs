@@ -1,12 +1,14 @@
-use crate::enums::Gender;
-use crate::errors::SpecErrors::{EvSumError, EvValueError, IvValueError};
+use crate::api::pokemon_move::MoveLearnMethod;
+use crate::enums::{Gender, LearnMethod};
+use crate::errors::SpecErrors::{
+    EvSumError, EvValueError, IvValueError, LevelTooLowMoveError, UnlearnableMoveError,
+};
 use crate::errors::{SpecError, SpecErrors};
 use miette::Result;
-use rand::Rng;
 use rusqlite::fallible_iterator::FallibleIterator;
-use std::cmp::min;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Formatter};
+use crate::cache::fetch_abilities;
 
 static STAT_NAMES: [&str; 6] = ["atk", "def", "spatk", "spdef", "spd", "hp"];
 pub static NATURES: [&str; 25] = [
@@ -278,4 +280,96 @@ impl Display for PokeSpec {
             self.nature
         )
     }
+}
+
+struct PokeSpecBuilder {
+    species: String,
+    ability: Option<String>,
+    level: u8, // Max of 100
+    nickname: Option<String>,
+    shiny: bool,
+    ot: String,
+    tid: usize,
+    sid: usize,
+    gender: Option<Gender>,
+    ball: String,
+    nature: Option<String>,
+    ivs: StatSpreadBuilder, // Max of 31 per stat, no actual stat total
+    evs: StatSpreadBuilder, // Max of 252 per stat, with a total of 510
+}
+
+impl PokeSpecBuilder {
+    fn new(species: &str) -> Self {
+        PokeSpecBuilder {
+            species: species.to_string(),
+            ability: None, // Either get from user or fill randomly from DB
+            level: 1,
+            nickname: None,
+            shiny: false,
+            ot: "PokeSpecRS".to_string(),
+            tid: 0,       // TODO: Implement
+            sid: 0,       // TODO: Implement
+            gender: None, // Either get from user or fill randomly from DB,
+            ball: "Poke".to_string(),
+            nature: None, // Either get from user or fill randomly from array
+            ivs: StatSpreadBuilder::ivs(),
+            evs: StatSpreadBuilder::evs(),
+        }
+    }
+
+    fn build(&self) -> Result<PokeSpec, SpecError> {
+        PokeSpec::new(
+            self.species.clone()
+            self.ability.unwrap_or(fetch_abilities())
+        )
+    }
+}
+
+pub fn is_learnable_move(
+    species: &str,
+    pk_move: &str,
+    pk_level: u8,
+    methods: &HashSet<MoveLearnMethod>,
+) -> Result<(), SpecErrors> {
+    // No methods mean the move is not learnable at all
+    if methods.len() < 1 {
+        Err(UnlearnableMoveError {
+            species: String::from(species),
+            pk_move: String::from(pk_move),
+        })?
+    }
+
+    let mut min_learn_level: Option<u8> = None;
+    for method in methods {
+        // Alternative learn methods mean the move is learnable regardless of level
+        if [LearnMethod::Egg, LearnMethod::Machine, LearnMethod::Tutor].contains(&method.method) {
+            return Ok(());
+        }
+
+        // Level-based learning must work number-wise, else move can't be learned at all
+        if method.method == LearnMethod::LevelUp {
+            let method_level = method.level_learned_at.clone().unwrap();
+            if method_level <= pk_level {
+                return Ok(());
+            }
+
+            if min_learn_level == None {
+                min_learn_level = Some(method_level);
+            } else {
+                let lvl = min_learn_level.unwrap();
+                if method_level < lvl {
+                    min_learn_level = Some(method_level);
+                } else {
+                    min_learn_level = Some(lvl);
+                }
+            }
+        }
+    }
+
+    Err(LevelTooLowMoveError {
+        species: String::from(species),
+        pk_move: String::from(pk_move),
+        level: pk_level.to_string(),
+        min_level: min_learn_level.unwrap().to_string(),
+    })?
 }
