@@ -2,6 +2,7 @@ use crate::api::pokemon_move::{MoveLearnMethod, PokeMove};
 use std::collections::HashSet;
 use std::fs::{create_dir_all, remove_file};
 
+use crate::api::{get_pokemon, get_pokemon_abilities, get_pokemon_moves};
 use crate::enums::{Generation, LearnMethod};
 use miette::{IntoDiagnostic, Result};
 use num_traits::{FromPrimitive, ToPrimitive};
@@ -78,10 +79,13 @@ pub fn set_up_db(connection: &Connection) -> Result<()> {
         )
         .into_diagnostic()?;
 
-    connection.execute(
-        "CREATE TABLE IF NOT EXISTS balls (id INTEGER PRIMARY KEY,\
-        name VARCHAR NOT NULL COLLATE NOCASE);", ()
-    ).into_diagnostic()?;
+    connection
+        .execute(
+            "CREATE TABLE IF NOT EXISTS balls (id INTEGER PRIMARY KEY,\
+        name VARCHAR NOT NULL COLLATE NOCASE);",
+            (),
+        )
+        .into_diagnostic()?;
 
     Ok(())
 }
@@ -101,7 +105,7 @@ pub fn is_species_cached(connection: &Connection, species: &str) -> bool {
     }
 }
 
-pub fn get_species_id(connection: &Connection, species: &str) -> Result<i32> {
+pub fn fetch_species_id(connection: &Connection, species: &str) -> Result<i32> {
     let stmt =
         connection.prepare(format!("SELECT * FROM pokemon WHERE species = '{species}'").as_str());
 
@@ -116,7 +120,8 @@ pub fn get_species_id(connection: &Connection, species: &str) -> Result<i32> {
     }
 }
 
-pub fn insert_pokemon(connection: &Connection, species: &str) -> Result<()> {
+/// Insert the given species of Pokemon into the `pokemon` table in the cache
+pub fn cache_species(connection: &Connection, species: &str) -> Result<()> {
     let stmt = connection.execute(
         format!("INSERT INTO pokemon (species) VALUES ('{}');", species).as_str(),
         (),
@@ -128,7 +133,8 @@ pub fn insert_pokemon(connection: &Connection, species: &str) -> Result<()> {
     }
 }
 
-pub fn insert_moves(connection: &Connection, moves: &Vec<PokeMove>, species_id: i32) -> Result<()> {
+/// For a given species and vector of moves, insert the moves into the cache
+pub fn cache_moves(connection: &Connection, moves: &Vec<PokeMove>, species_id: i32) -> Result<()> {
     let mut buffer: Vec<String> = vec![String::from("BEGIN;")];
 
     for pk_move in moves {
@@ -146,6 +152,7 @@ pub fn insert_moves(connection: &Connection, moves: &Vec<PokeMove>, species_id: 
     }
 }
 
+/// For a given species and move, retrieve all the learning methods for that move from the cache
 pub fn fetch_move_methods(
     conn: &Connection,
     species_id: i32,
@@ -180,11 +187,14 @@ pub fn fetch_move_methods(
     }
 }
 
-pub fn insert_abilities(conn: &Connection, abilities: &Vec<String>, species_id: i32) -> Result<()> {
+/// For a given species and vector of abilities, insert each ability into the cache
+pub fn cache_abilities(conn: &Connection, abilities: &Vec<String>, species_id: i32) -> Result<()> {
     let mut buffer: Vec<String> = vec![String::from("BEGIN;")];
 
     for ability in abilities {
-            buffer.push(format!("INSERT INTO abilities (name, species_id) VALUES ('{ability}', '{species_id}');", ))
+        buffer.push(format!(
+            "INSERT INTO abilities (name, species_id) VALUES ('{ability}', '{species_id}');",
+        ))
     }
 
     buffer.push(String::from("COMMIT;"));
@@ -201,7 +211,7 @@ pub fn fetch_abilities(conn: &Connection, species_id: i32) -> Result<HashSet<Str
 
     match stmt {
         Ok(mut res) => {
-            let mut abilities:HashSet<String> = HashSet::new();
+            let mut abilities: HashSet<String> = HashSet::new();
             let ability_sql = res.query(rusqlite::params![species_id]);
 
             match ability_sql {
@@ -222,11 +232,12 @@ pub fn fetch_abilities(conn: &Connection, species_id: i32) -> Result<HashSet<Str
     }
 }
 
-pub fn insert_balls(conn: &Connection, balls: HashSet<String>) -> Result<()>{
+/// For each type of pokeball known to PokeAPI, cache them.
+pub fn cache_balls(conn: &Connection, balls: HashSet<String>) -> Result<()> {
     let mut buffer: Vec<String> = vec![String::from("BEGIN;")];
 
     for ball in balls {
-        buffer.push(format!("INSERT INTO balls (name) VALUES ('{ball}');", ))
+        buffer.push(format!("INSERT INTO balls (name) VALUES ('{ball}');",))
     }
 
     buffer.push(String::from("COMMIT;"));
@@ -238,6 +249,7 @@ pub fn insert_balls(conn: &Connection, balls: HashSet<String>) -> Result<()>{
     }
 }
 
+/// Retrieve a set of each type of pokeball from the cache
 pub fn fetch_balls(conn: &Connection) -> Result<HashSet<String>> {
     let stmt = conn.prepare("SELECT * FROM balls");
 
@@ -255,8 +267,30 @@ pub fn fetch_balls(conn: &Connection) -> Result<HashSet<String>> {
                 }
                 Err(e) => Err(e).into_diagnostic(),
             }
-
         }
         Err(e) => Err(e).into_diagnostic(),
     }
+}
+
+/// A convenience function to cache a species and all of its related fields all at once.
+pub fn cache_entire_pokemon(
+    conn: &Connection,
+    species: &str,
+    poke_moves: &Vec<PokeMove>,
+    abilities: &Vec<String>,
+) -> Result<i32> {
+    cache_species(conn, species)?;
+    let species_id = fetch_species_id(conn, species)?;
+    cache_moves(conn, poke_moves, species_id)?;
+    cache_abilities(conn, abilities, species_id)?;
+    Ok(species_id)
+}
+
+/// A convenience function that pulls data from PokeAPI and then caches the results
+pub fn get_and_cache_pokemon(species: &str) -> Result<i32> {
+    let conn = get_db_connection();
+    let pokemon_json = get_pokemon(species);
+    let pokemon_moves = get_pokemon_moves(&pokemon_json);
+    let pokemon_abilities = get_pokemon_abilities(&pokemon_json);
+    cache_entire_pokemon(&conn, &species, &pokemon_moves, &pokemon_abilities)
 }

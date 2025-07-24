@@ -1,12 +1,14 @@
-use crate::api::{get_pokemon, get_pokemon_abilities, get_pokemon_moves};
-use crate::cache::{del_cache_on_disk, fetch_move_methods, get_db_connection, get_species_id, insert_abilities, insert_moves, insert_pokemon, is_species_cached, set_up_db};
+use crate::cache::{
+    del_cache_on_disk, fetch_move_methods,
+    fetch_species_id, get_and_cache_pokemon, get_db_connection, is_species_cached, set_up_db,
+};
 use crate::console::success;
 use crate::enums::Gender;
 use crate::errors::{SpecError, SpecErrors};
-use crate::spec::{PokeSpec, is_learnable_move};
-use crate::{CacheCommands, Commands, spec};
+use crate::spec::{is_learnable_move, PokeSpec};
+use crate::{spec, CacheCommands, Commands};
 use miette::Result;
-use rand::{Rng, rng};
+use rand::{rng, Rng};
 use std::collections::HashMap;
 
 /// A trait that defines the interface for executing command logic
@@ -136,26 +138,10 @@ impl CommandLogic for Generate {
                 let species_id: i32;
                 // TODO: There's probably an easy way to detect if the species is in the cache while retrieving its primary-key id. Rewrite get_species_id?
 
-                match is_species_cached(&conn, species) {
-                    true => {
-                        species_id = get_species_id(&conn, &species)?;
-                    }
-                    false => {
-                        println!(
-                            "Downloading and caching moves... This will only happen once per Pokemon!"
-                        );
-                        let pokemon_payload = get_pokemon(species);
-                        let moves = get_pokemon_moves(&pokemon_payload);
-                        let abilities = get_pokemon_abilities(&pokemon_payload);
-
-                        insert_pokemon(&conn, species)
-                            .expect("Error when inserting species into cache!");
-                        species_id = get_species_id(&conn, &species)?;
-                        println!("Species ID for {species} is {species_id}");
-                        insert_moves(&conn, &moves, species_id)
-                            .expect("Error when inserting moves into cache!");
-                        insert_abilities(&conn, &abilities, species_id)?;
-                    }
+                if is_species_cached(&conn, species) {
+                    species_id = fetch_species_id(&conn, &species)?;
+                } else {
+                    species_id = get_and_cache_pokemon(species)?;
                 }
 
                 let mut errors: Vec<SpecErrors> = Vec::new();

@@ -8,7 +8,6 @@ use miette::Result;
 use rusqlite::fallible_iterator::FallibleIterator;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Formatter};
-use crate::cache::fetch_abilities;
 
 static STAT_NAMES: [&str; 6] = ["atk", "def", "spatk", "spdef", "spd", "hp"];
 pub static NATURES: [&str; 25] = [
@@ -317,12 +316,10 @@ impl PokeSpecBuilder {
         }
     }
 
-    fn build(&self) -> Result<PokeSpec, SpecError> {
-        PokeSpec::new(
-            self.species.clone()
-            self.ability.unwrap_or(fetch_abilities())
-        )
-    }
+    /*fn build(&self) -> Result<PokeSpec, SpecError> {
+
+
+    }*/
 }
 
 pub fn is_learnable_move(

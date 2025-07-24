@@ -16,7 +16,10 @@ pub fn get_poke_api_route(route: &str) -> serde_json::Value {
     }
     let json = req.unwrap().json();
     if json.is_err() {
-        err((String::from("Failed to parse JSON from PokeAPI's response. Is the endpoint correct?") + route).as_str());
+        err((String::from(
+            "Failed to parse JSON from PokeAPI's response. Is the endpoint correct? ",
+        ) + BASE_URI + route)
+            .as_str());
         exit(-1);
     }
     let json: serde_json::Value = json.unwrap();
@@ -24,7 +27,7 @@ pub fn get_poke_api_route(route: &str) -> serde_json::Value {
 }
 
 pub fn get_pokemon(species: &str) -> serde_json::Value {
-    get_poke_api_route(species)
+    get_poke_api_route((String::from("pokemon/") + species).as_str())
 }
 
 /// For a given Pokemon JSON object, extract a structured list of moves.
