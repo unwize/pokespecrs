@@ -26,12 +26,12 @@ pub fn get_poke_api_route(route: &str) -> serde_json::Value {
     json
 }
 
-pub fn get_pokemon(species: &str) -> serde_json::Value {
+pub fn api_get_pokemon(species: &str) -> serde_json::Value {
     get_poke_api_route((String::from("pokemon/") + species).as_str())
 }
 
 /// For a given Pokemon JSON object, extract a structured list of moves.
-pub fn get_pokemon_moves(pokemon_json: &serde_json::Value) -> Vec<PokeMove> {
+pub fn api_get_pokemon_moves(pokemon_json: &serde_json::Value) -> Vec<PokeMove> {
     // The returned list of Move structs
     let mut moves: Vec<PokeMove> = Vec::new();
 
@@ -71,7 +71,7 @@ pub fn get_pokemon_moves(pokemon_json: &serde_json::Value) -> Vec<PokeMove> {
     moves
 }
 
-pub fn get_pokemon_abilities(pokemon_json: &serde_json::Value) -> Vec<String> {
+pub fn api_get_pokemon_abilities(pokemon_json: &serde_json::Value) -> Vec<String> {
     let mut abilities: Vec<String> = Vec::new();
 
     for ability in pokemon_json["abilities"].as_array().unwrap() {
@@ -81,7 +81,7 @@ pub fn get_pokemon_abilities(pokemon_json: &serde_json::Value) -> Vec<String> {
     abilities
 }
 
-pub fn get_balls() -> HashSet<String> {
+pub fn api_get_balls() -> HashSet<String> {
     static BALL_URI: &str = "item-pocket/3/";
     let response = get_poke_api_route(BALL_URI);
 
