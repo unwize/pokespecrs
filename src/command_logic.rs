@@ -1,7 +1,4 @@
-use crate::cache::{
-    del_cache_on_disk, fetch_move_methods,
-    fetch_species_id, get_and_cache_pokemon, get_db_connection, is_species_cached, set_up_db,
-};
+use crate::cache::{del_cache_on_disk, fetch_move_methods, fetch_species_id, get_and_cache_pokemon, get_db_connection, is_cache, is_species_cached, set_up_db};
 use crate::console::success;
 use crate::enums::Gender;
 use crate::errors::{SpecError, SpecErrors};
@@ -131,8 +128,12 @@ impl CommandLogic for Generate {
                     Some(evs),
                 );
 
+                let cache_exists = is_cache();  // Check for cache's existence before opening connection. Creating the conn object automatically initializes db on disk if it doesn't exit.
                 let conn = get_db_connection();
-                set_up_db(&conn).expect("Unable to set up cache!");
+                if !cache_exists {
+                    set_up_db(&conn).expect("Unable to set up cache!");
+                }
+
 
                 let conn = conn;
                 let species_id: i32;
