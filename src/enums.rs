@@ -1,6 +1,6 @@
 use crate::console::err;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, FromPrimitive, ToPrimitive)]
 pub enum Gender {
     Male,
     Female,

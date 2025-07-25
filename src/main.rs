@@ -7,15 +7,12 @@ mod console;
 pub mod enums;
 mod errors;
 pub mod spec;
+mod util;
 
 use crate::command_logic::CommandLogic;
 use clap::Subcommand;
 use clap::{Args, Parser};
-use figment::providers::Serialized;
-use figment::{
-    Figment,
-    providers::{Format, Json},
-};
+use figment::providers::Format;
 use miette::{IntoDiagnostic, Result};
 
 #[derive(Parser, Debug)]
@@ -80,7 +77,7 @@ pub enum Commands {
         evspd: Option<u16>,
         #[arg(long)]
         evhp: Option<u16>,
-        #[arg(long)]
+        #[arg(long, num_args = 1..4)]
         moveset: Vec<String>,
         #[arg(long = "gen")]
         generation: Option<u8>,

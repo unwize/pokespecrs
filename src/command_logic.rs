@@ -2,11 +2,12 @@ use crate::cache::{del_cache_on_disk, fetch_move_methods, fetch_species_id, get_
 use crate::console::success;
 use crate::enums::Gender;
 use crate::errors::{SpecError, SpecErrors};
-use crate::spec::{is_learnable_move, PokeSpec};
+use crate::spec::{is_learnable_move, PokeSpec, PokeSpecBuilder};
 use crate::{spec, CacheCommands, Commands};
 use miette::Result;
 use rand::{rng, Rng};
 use std::collections::HashMap;
+use rusqlite::fallible_iterator::FallibleIterator;
 
 /// A trait that defines the interface for executing command logic
 pub trait CommandLogic {
@@ -107,26 +108,8 @@ impl CommandLogic for Generate {
                     evs.insert("hp".to_string(), evhp.unwrap());
                 }
 
-                let mut rng = rng();
-                let spec = PokeSpec::new(
-                    species.clone(),
-                    "".to_string(),
-                    *level,
-                    None,
-                    *shiny,
-                    ot.clone(),
-                    tid.unwrap_or(rng.random_range(10000..100000)),
-                    sid.unwrap_or(rng.random_range(10000..100000)),
-                    Gender::Male,
-                    ball.clone().unwrap(),
-                    if nature.is_some() {
-                        nature.clone().unwrap()
-                    } else {
-                        spec::NATURES[rng.random_range(0..spec::NATURES.len())].to_string()
-                    },
-                    Some(ivs), // TODO: Refactor to allow ivs and evs to both throw errors
-                    Some(evs),
-                );
+                let mut spec_builder = PokeSpecBuilder::new(species);
+                let spec = spec_builder.build();
 
                 let cache_exists = is_cache();  // Check for cache's existence before opening connection. Creating the conn object automatically initializes db on disk if it doesn't exit.
                 let conn = get_db_connection();
@@ -143,27 +126,6 @@ impl CommandLogic for Generate {
                     species_id = fetch_species_id(&conn, &species)?;
                 } else {
                     species_id = get_and_cache_pokemon(species)?;
-                }
-
-                let mut errors: Vec<SpecErrors> = Vec::new();
-
-                for poke_move in moveset {
-                    let methods = fetch_move_methods(&conn, species_id, poke_move);
-                    if methods.is_ok() {
-                        match is_learnable_move(species, poke_move, *level, &methods?) {
-                            Err(e) => errors.push(e),
-                            _ => {}
-                        }
-                    } else {
-                        println!("{:?}", methods?)
-                    }
-                }
-
-                if !errors.is_empty() || spec.is_err() {
-                    if spec.is_err() {
-                        errors.append(&mut spec.err().unwrap().causes);
-                    }
-                    return Err(SpecError { causes: errors })?;
                 }
 
                 success(format!("{}", spec?).as_str());

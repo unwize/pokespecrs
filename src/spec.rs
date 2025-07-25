@@ -1,13 +1,15 @@
 use crate::api::pokemon_move::MoveLearnMethod;
 use crate::enums::{Gender, LearnMethod};
-use crate::errors::SpecErrors::{
-    EvSumError, EvValueError, IvValueError, LevelTooLowMoveError, UnlearnableMoveError,
-};
+use crate::errors::SpecErrors::{EvSumError, EvValueError, IllegalAbilityError, IvValueError, LevelTooLowMoveError, UnlearnableMoveError};
 use crate::errors::{SpecError, SpecErrors};
-use miette::Result;
+use miette::{Error, Result};
 use rusqlite::fallible_iterator::FallibleIterator;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Formatter};
+use rand::{rng, Rng};
+use crate::cache::{fetch_abilities, fetch_move_methods, fetch_species_id, get_and_cache_pokemon, get_db_connection, is_species_cached};
+use crate::console::err;
+use crate::util::sample_hash_set;
 
 static STAT_NAMES: [&str; 6] = ["atk", "def", "spatk", "spdef", "spd", "hp"];
 pub static NATURES: [&str; 25] = [
@@ -224,26 +226,11 @@ impl PokeSpec {
         gender: Gender,
         ball: String,
         nature: String,
-        ivs: Option<HashMap<String, u16>>,
-        evs: Option<HashMap<String, u16>>,
-    ) -> Result<Self, SpecError> {
-        let mut ivs = StatSpreadBuilder::ivs()
-            .stats(ivs.unwrap_or(HashMap::new()))
-            .build();
-        let mut evs = StatSpreadBuilder::evs()
-            .stats(evs.unwrap_or(HashMap::new()))
-            .build();
+        ivs: StatSpread,
+        evs: StatSpread,
+    ) -> Self {
 
-        // TODO: There must be a cleaner way of doing this
-        if ivs.is_err() && evs.is_err() {
-            return Err(ivs.err().unwrap() + evs.err().unwrap());
-        } else if ivs.is_err() {
-            return Err(ivs.err().unwrap());
-        } else if evs.is_err() {
-            return Err(evs.err().unwrap());
-        }
-
-        Ok(PokeSpec {
+        PokeSpec {
             species,
             ability,
             level,
@@ -255,9 +242,9 @@ impl PokeSpec {
             gender,
             ball,
             nature,
-            ivs: ivs?,
-            evs: evs?,
-        })
+            ivs,
+            evs,
+        }
     }
 }
 
@@ -281,7 +268,9 @@ impl Display for PokeSpec {
     }
 }
 
-struct PokeSpecBuilder {
+
+
+pub struct PokeSpecBuilder {
     species: String,
     ability: Option<String>,
     level: u8, // Max of 100
@@ -295,10 +284,80 @@ struct PokeSpecBuilder {
     nature: Option<String>,
     ivs: StatSpreadBuilder, // Max of 31 per stat, no actual stat total
     evs: StatSpreadBuilder, // Max of 252 per stat, with a total of 510
+    move_set: HashSet<String>, // A set of up to four moves denoting the active move set of the pokemon
 }
 
 impl PokeSpecBuilder {
-    fn new(species: &str) -> Self {
+
+    pub fn species(&mut self, species: &str) -> &mut Self {
+        self.species = species.to_string();
+        self
+    }
+
+    pub fn ability(&mut self, ability: &str) -> &mut Self {
+        self.ability = Some(ability.to_string());
+        self
+    }
+
+    pub fn level(&mut self, level: u8) -> &mut Self {
+        self.level = level;
+        self
+    }
+
+    pub fn nickname(&mut self, nickname: &str) -> &mut Self {
+        self.nickname = Some(nickname.to_string());
+        self
+    }
+
+    pub fn shiny(&mut self, shiny: bool) -> &mut Self {
+        self.shiny = shiny;
+        self
+    }
+
+    pub fn ot(&mut self, ot: &str) -> &mut Self {
+        self.ot = ot.to_string();
+        self
+    }
+
+    pub fn tid(&mut self, tid: usize) -> &mut Self {
+        self.tid = tid;
+        self
+    }
+
+    pub fn sid(&mut self, sid: usize) -> &mut Self {
+        self.sid = sid;
+        self
+    }
+
+    pub fn gender(&mut self, gender: Gender) -> &mut Self {
+        self.gender = Some(gender);
+        self
+    }
+
+    pub fn ball(&mut self, ball: &str) -> &mut Self {
+        self.ball = ball.to_string();
+        self
+    }
+
+    pub fn nature(&mut self, nature: &str) -> &mut Self {
+        self.nature = Some(nature.to_string());
+        self
+    }
+
+    pub fn ivs(&mut self)-> &mut StatSpreadBuilder {
+        &mut self.ivs
+    }
+
+    pub fn evs(&mut self)-> &mut StatSpreadBuilder {
+        &mut self.evs
+    }
+
+    pub fn move_set(&mut self, move_set: HashSet<String>) -> &mut Self {
+        self.move_set = move_set;
+        self
+    }
+
+    pub fn new(species: &str) -> Self {
         PokeSpecBuilder {
             species: species.to_string(),
             ability: None, // Either get from user or fill randomly from DB
@@ -313,13 +372,94 @@ impl PokeSpecBuilder {
             nature: None, // Either get from user or fill randomly from array
             ivs: StatSpreadBuilder::ivs(),
             evs: StatSpreadBuilder::evs(),
+            move_set: HashSet::new(),
         }
     }
 
-    /*fn build(&self) -> Result<PokeSpec, SpecError> {
+    pub fn build(&self) -> Result<PokeSpec, Error> {
+        let conn = get_db_connection();
+        if !is_species_cached(&conn, self.species.as_str()) {
+            get_and_cache_pokemon(self.species.as_str())?;
+        }
+
+        let species_id = fetch_species_id(&conn, self.species.as_str())?;
+
+        let mut error: Option<SpecError> = None;
+
+        let legal_abilities = fetch_abilities(&conn, species_id)?;
+
+        // Determine legality of the ability. If no ability was provided by the user, randomly select one instead.
+        match self.ability.clone() {
+            Some(ability) => {
+                if !legal_abilities.contains(&ability) {
+                    if error.is_none() {
+                        error = Some(SpecError {causes: Vec::new()})
+                    }
+                    error = Some(error.unwrap() + IllegalAbilityError {species: self.species.clone(), ability: ability.clone()});
+                }
+            }
+
+            None => {}
+        }
+
+        // Determine legality of the moveset
+        for poke_move in &self.move_set {
+            let methods = fetch_move_methods(&conn, species_id, poke_move);
+            if methods.is_ok() {
+                match is_learnable_move(&self.species, poke_move, self.level, &methods?) {
+                    Err(e) => {
+                        if error.is_none() {
+                            error = Some(SpecError {causes: Vec::new()});
+                            error = Some(error.unwrap() + e);
+                        }
+                    },
+                    _ => {}
+                }
+            } else {
+                println!("{:?}", methods?)
+            }
+        }
+
+        // Determine the legality of the provided gender. If no gender was provided, select one randomly
+        if self.gender.is_some() {
+            // TODO: Check legality
+        } else {
+
+        }
+
+        // Check if IVs or EVs have any errors. If so, accumulate them in the `error` field.
+        let ivs = self.ivs.build();
+        if ivs.is_err() {
+            error = Some(ivs.clone().err().unwrap() + error);
+        }
+
+        let evs = self.evs.build();
+        if evs.is_err() {
+            error = Some(evs.clone().err().unwrap() + error);
+        }
+
+        if error.is_some() {
+            return Err(error.unwrap())?;
+        }
+
+        Ok(PokeSpec::new(
+            self.species.clone(),
+            self.ability.clone().unwrap_or(sample_hash_set(&fetch_abilities(&conn, species_id)?)),
+            self.level,
+            self.nickname.clone(),
+            self.shiny,
+            self.ot.clone(),
+            self.tid,
+            self.sid,
+            self.gender.clone().unwrap_or(Gender::Genderless),
+            self.ball.clone(),
+            self.nature.clone().unwrap_or(NATURES.get(rng().random_range(0..NATURES.len())).unwrap().to_string()),
+            ivs?,
+            evs?
+        ))
 
 
-    }*/
+    }
 }
 
 pub fn is_learnable_move(

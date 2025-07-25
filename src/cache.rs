@@ -4,7 +4,7 @@ use std::fs::{create_dir_all, remove_file};
 
 use crate::api::{api_get_pokemon, api_get_pokemon_abilities, api_get_pokemon_moves};
 use crate::enums::{Generation, LearnMethod};
-use miette::{IntoDiagnostic, Result};
+use miette::{Error, ErrorHook, IntoDiagnostic, Result};
 use num_traits::{FromPrimitive, ToPrimitive};
 use rusqlite::Connection;
 use std::path::Path;
@@ -279,7 +279,7 @@ pub fn cache_entire_pokemon(
     species: &str,
     poke_moves: &Vec<PokeMove>,
     abilities: &Vec<String>,
-) -> Result<i32> {
+) -> Result<i32, Error> {
     cache_species(conn, species)?;
     let species_id = fetch_species_id(conn, species)?;
     cache_moves(conn, poke_moves, species_id)?;
@@ -288,7 +288,7 @@ pub fn cache_entire_pokemon(
 }
 
 /// A convenience function that pulls data from PokeAPI and then caches the results
-pub fn get_and_cache_pokemon(species: &str) -> Result<i32> {
+pub fn get_and_cache_pokemon(species: &str) -> Result<i32, Error> {
     info(format!("Fetching {species}'s info. This will only happen once!").as_str());
     let conn = get_db_connection();
     let pokemon_json = api_get_pokemon(species);
