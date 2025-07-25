@@ -2,13 +2,14 @@ use crate::api::pokemon_move::{MoveLearnMethod, PokeMove};
 use std::collections::HashSet;
 use std::fs::{create_dir_all, remove_file};
 
-use crate::api::{get_pokemon, get_pokemon_abilities, get_pokemon_moves};
+use crate::api::{api_get_pokemon, api_get_pokemon_abilities, api_get_pokemon_moves};
 use crate::enums::{Generation, LearnMethod};
 use miette::{IntoDiagnostic, Result};
 use num_traits::{FromPrimitive, ToPrimitive};
 use rusqlite::Connection;
 use std::path::Path;
 use std::process::exit;
+use crate::console::info;
 
 const CACHE_PATH: &str = ".pokespecrs/";
 const CACHE_FNAME: &str = "cache.db3";
@@ -21,11 +22,6 @@ const MOVE_TABLE: &str = "moves";
 pub fn get_db_connection() -> Connection {
     create_dir_all(Path::new(CACHE_PATH)).expect("Failed to create dir for cache!");
     Connection::open(Path::new(CACHE_PATH).join(CACHE_FNAME)).expect("Failed to connect to cache!")
-}
-
-/// Quick and dirty way to see if a cache has already been created
-pub fn is_cache_on_disk() -> bool {
-    Path::new(CACHE_PATH).exists()
 }
 
 pub fn del_cache_on_disk() {
@@ -88,6 +84,11 @@ pub fn set_up_db(connection: &Connection) -> Result<()> {
         .into_diagnostic()?;
 
     Ok(())
+}
+
+/// Checks if the cache is present on disk. Does not verify cache integrity.
+pub fn is_cache() -> bool {
+    Path::new(CACHE_PATH).join(CACHE_FNAME).exists()
 }
 
 /// Check if a given species of pokemon has already been cached
@@ -288,9 +289,13 @@ pub fn cache_entire_pokemon(
 
 /// A convenience function that pulls data from PokeAPI and then caches the results
 pub fn get_and_cache_pokemon(species: &str) -> Result<i32> {
+    info(format!("Fetching {species}'s info. This will only happen once!").as_str());
     let conn = get_db_connection();
-    let pokemon_json = get_pokemon(species);
-    let pokemon_moves = get_pokemon_moves(&pokemon_json);
-    let pokemon_abilities = get_pokemon_abilities(&pokemon_json);
+    let pokemon_json = api_get_pokemon(species);
+    info("Fetching moves...");
+    let pokemon_moves = api_get_pokemon_moves(&pokemon_json);
+    info("Fetching abilities...");
+    let pokemon_abilities = api_get_pokemon_abilities(&pokemon_json);
+    info("Caching results...");
     cache_entire_pokemon(&conn, &species, &pokemon_moves, &pokemon_abilities)
 }
