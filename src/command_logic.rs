@@ -68,66 +68,52 @@ impl CommandLogic for Generate {
                 moveset,
                 generation,
             } => {
-                let mut ivs: HashMap<String, u16> = HashMap::new();
+                let mut spec_builder = PokeSpecBuilder::new(species);
                 if ivatk.is_some() {
-                    ivs.insert("atk".to_string(), ivatk.unwrap());
+                    spec_builder.ivs().atk(ivatk.unwrap());
                 }
                 if ivdef.is_some() {
-                    ivs.insert("def".to_string(), ivdef.unwrap());
+                    spec_builder.ivs().def(ivdef.unwrap());
                 }
                 if ivspatk.is_some() {
-                    ivs.insert("spatk".to_string(), ivspatk.unwrap());
+                    spec_builder.ivs().spatk(ivspatk.unwrap());
                 }
                 if ivspdef.is_some() {
-                    ivs.insert("spdef".to_string(), ivspdef.unwrap());
+                    spec_builder.ivs().spdef(ivspdef.unwrap());
+                    
                 }
                 if ivspd.is_some() {
-                    ivs.insert("spd".to_string(), ivspd.unwrap());
+                    spec_builder.ivs().spd(ivspd.unwrap());
                 }
                 if ivhp.is_some() {
-                    ivs.insert("hp".to_string(), ivhp.unwrap());
+                    spec_builder.ivs().hp(ivhp.unwrap());
                 }
-
-                let mut evs: HashMap<String, u16> = HashMap::new();
                 if evatk.is_some() {
-                    evs.insert("atk".to_string(), evatk.unwrap());
+                    spec_builder.evs().atk(evatk.unwrap());
                 }
                 if evdef.is_some() {
-                    evs.insert("def".to_string(), evdef.unwrap());
+                    spec_builder.evs().def(evdef.unwrap());
                 }
                 if evspatk.is_some() {
-                    evs.insert("spatk".to_string(), evspatk.unwrap());
+                    spec_builder.evs().spatk(evspatk.unwrap());
                 }
                 if evspdef.is_some() {
-                    evs.insert("spdef".to_string(), evspdef.unwrap());
+                    spec_builder.evs().spdef(evspdef.unwrap());
                 }
                 if evspd.is_some() {
-                    evs.insert("spd".to_string(), evspd.unwrap());
+                    spec_builder.evs().spd(evspd.unwrap());
                 }
                 if evhp.is_some() {
-                    evs.insert("hp".to_string(), evhp.unwrap());
+                    spec_builder.evs().hp(evhp.unwrap());
                 }
-
-                let mut spec_builder = PokeSpecBuilder::new(species);
-                let spec = spec_builder.build();
 
                 let cache_exists = is_cache();  // Check for cache's existence before opening connection. Creating the conn object automatically initializes db on disk if it doesn't exit.
                 let conn = get_db_connection();
                 if !cache_exists {
                     set_up_db(&conn).expect("Unable to set up cache!");
                 }
-
-
-                let conn = conn;
-                let species_id: i32;
-                // TODO: There's probably an easy way to detect if the species is in the cache while retrieving its primary-key id. Rewrite get_species_id?
-
-                if is_species_cached(&conn, species) {
-                    species_id = fetch_species_id(&conn, &species)?;
-                } else {
-                    species_id = get_and_cache_pokemon(species)?;
-                }
-
+                
+                let spec = spec_builder.build();
                 success(format!("{}", spec?).as_str());
                 Ok(())
             }

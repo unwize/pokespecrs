@@ -32,7 +32,7 @@ pub enum StatSpreadType {
 }
 
 impl StatSpreadBuilder {
-    fn new(stat_max: u16, sum_max: u16) -> Self {
+    pub fn new(stat_max: u16, sum_max: u16) -> Self {
         StatSpreadBuilder {
             stat_max,
             sum_max,
@@ -41,7 +41,7 @@ impl StatSpreadBuilder {
         }
     }
 
-    fn ivs() -> Self {
+    pub fn ivs() -> Self {
         StatSpreadBuilder {
             stat_max: 31,
             sum_max: 31 * 6,
@@ -50,7 +50,7 @@ impl StatSpreadBuilder {
         }
     }
 
-    fn evs() -> Self {
+    pub fn evs() -> Self {
         StatSpreadBuilder {
             stat_max: 252,
             sum_max: 510,
@@ -59,47 +59,47 @@ impl StatSpreadBuilder {
         }
     }
 
-    fn stat_max(&mut self, max: u16) -> &mut Self {
+    pub fn stat_max(&mut self, max: u16) -> &mut Self {
         self.stat_max = max;
         self
     }
 
-    fn sum_max(&mut self, max: u16) -> &mut Self {
+    pub fn sum_max(&mut self, max: u16) -> &mut Self {
         self.sum_max = max;
         self
     }
 
-    fn atk(&mut self, atk: u16) -> &mut Self {
+    pub fn atk(&mut self, atk: u16) -> &mut Self {
         self.stats.insert("atk".to_string(), atk);
         self
     }
 
-    fn def(&mut self, def: u16) -> &mut Self {
+    pub fn def(&mut self, def: u16) -> &mut Self {
         self.stats.insert("def".to_string(), def);
         self
     }
 
-    fn spatk(&mut self, spatk: u16) -> &mut Self {
+    pub fn spatk(&mut self, spatk: u16) -> &mut Self {
         self.stats.insert("spatk".to_string(), spatk);
         self
     }
 
-    fn spdef(&mut self, spdef: u16) -> &mut Self {
+    pub fn spdef(&mut self, spdef: u16) -> &mut Self {
         self.stats.insert("spdef".to_string(), spdef);
         self
     }
 
-    fn spd(&mut self, spd: u16) -> &mut Self {
+    pub fn spd(&mut self, spd: u16) -> &mut Self {
         self.stats.insert("spd".to_string(), spd);
         self
     }
 
-    fn hp(&mut self, hp: u16) -> &mut Self {
+    pub fn hp(&mut self, hp: u16) -> &mut Self {
         self.stats.insert("hp".to_string(), hp);
         self
     }
 
-    fn stats(&mut self, stats: HashMap<String, u16>) -> &mut Self {
+    pub fn stats(&mut self, stats: HashMap<String, u16>) -> &mut Self {
         self.stats = stats;
         self
     }
@@ -115,8 +115,8 @@ impl StatSpreadBuilder {
 }
 
 #[derive(Clone, Debug)]
-struct StatSpread {
-    pub stats: HashMap<String, u16>,
+pub struct StatSpread {
+    stats: HashMap<String, u16>,
     stat_max: u16,
     sum_max: u16,
     stat_type: StatSpreadType,
@@ -410,8 +410,9 @@ impl PokeSpecBuilder {
                     Err(e) => {
                         if error.is_none() {
                             error = Some(SpecError {causes: Vec::new()});
-                            error = Some(error.unwrap() + e);
                         }
+
+                        error = Some(error.unwrap() + e);
                     },
                     _ => {}
                 }
