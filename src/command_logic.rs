@@ -1,13 +1,10 @@
-use crate::cache::{del_cache_on_disk, fetch_move_methods, fetch_species_id, get_and_cache_pokemon, get_db_connection, is_cache, is_species_cached, set_up_db};
+use crate::cache::{del_cache_on_disk, get_db_connection, is_cache, set_up_db};
 use crate::console::success;
-use crate::enums::Gender;
-use crate::errors::{SpecError, SpecErrors};
-use crate::spec::{is_learnable_move, PokeSpec, PokeSpecBuilder};
-use crate::{spec, CacheCommands, Commands};
+use crate::spec::PokeSpecBuilder;
+use crate::{CacheCommands, Commands};
 use miette::Result;
-use rand::{rng, Rng};
-use std::collections::HashMap;
 use rusqlite::fallible_iterator::FallibleIterator;
+use std::collections::HashSet;
 
 /// A trait that defines the interface for executing command logic
 pub trait CommandLogic {
@@ -80,7 +77,6 @@ impl CommandLogic for Generate {
                 }
                 if ivspdef.is_some() {
                     spec_builder.ivs().spdef(ivspdef.unwrap());
-                    
                 }
                 if ivspd.is_some() {
                     spec_builder.ivs().spd(ivspd.unwrap());
@@ -106,6 +102,18 @@ impl CommandLogic for Generate {
                 if evhp.is_some() {
                     spec_builder.evs().hp(evhp.unwrap());
                 }
+                if ability.is_some() {
+                    spec_builder.ability(ability.clone().unwrap().as_str());
+                }
+                if nature.is_some() {
+                    spec_builder.nature(nature.clone().unwrap().as_str());
+                }
+                if nickname.is_some() {
+                    spec_builder.nickname(nickname.clone().unwrap().as_str());
+                }
+                spec_builder.ot(ot).tid(tid.unwrap_or(0)).sid(sid.unwrap_or(0));
+                spec_builder.move_set(HashSet::from_iter(moveset.clone()));
+                spec_builder.level(*level).shiny(*shiny).ball(ball.clone().as_str());
 
                 let cache_exists = is_cache();  // Check for cache's existence before opening connection. Creating the conn object automatically initializes db on disk if it doesn't exit.
                 let conn = get_db_connection();
