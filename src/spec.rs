@@ -1,15 +1,14 @@
 use crate::api::pokemon_move::MoveLearnMethod;
+use crate::cache::{fetch_abilities, fetch_move_methods, fetch_species_id, get_and_cache_pokemon, get_db_connection, is_species_cached};
 use crate::enums::{Gender, LearnMethod};
 use crate::errors::SpecErrors::{EvSumError, EvValueError, IllegalAbilityError, IvValueError, LevelTooLowMoveError, UnlearnableMoveError};
 use crate::errors::{SpecError, SpecErrors};
+use crate::util::sample_hash_set;
 use miette::{Error, Result};
+use rand::{rng, Rng};
 use rusqlite::fallible_iterator::FallibleIterator;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Formatter};
-use rand::{rng, Rng};
-use crate::cache::{fetch_abilities, fetch_move_methods, fetch_species_id, get_and_cache_pokemon, get_db_connection, is_species_cached};
-use crate::console::err;
-use crate::util::sample_hash_set;
 
 static STAT_NAMES: [&str; 6] = ["atk", "def", "spatk", "spdef", "spd", "hp"];
 pub static NATURES: [&str; 25] = [
@@ -268,8 +267,6 @@ impl Display for PokeSpec {
     }
 }
 
-
-
 pub struct PokeSpecBuilder {
     species: String,
     ability: Option<String>,
@@ -468,27 +465,27 @@ pub fn is_learnable_move(
     pk_move: &str,
     pk_level: u8,
     methods: &HashSet<MoveLearnMethod>,
-) -> Result<(), SpecErrors> {
+) -> Result<bool, SpecErrors> {
     // No methods mean the move is not learnable at all
     if methods.len() < 1 {
-        Err(UnlearnableMoveError {
+        return Err(UnlearnableMoveError {
             species: String::from(species),
             pk_move: String::from(pk_move),
-        })?
+        })
     }
 
     let mut min_learn_level: Option<u8> = None;
     for method in methods {
         // Alternative learn methods mean the move is learnable regardless of level
         if [LearnMethod::Egg, LearnMethod::Machine, LearnMethod::Tutor].contains(&method.method) {
-            return Ok(());
+            return Ok(true);
         }
 
         // Level-based learning must work number-wise, else move can't be learned at all
         if method.method == LearnMethod::LevelUp {
             let method_level = method.level_learned_at.clone().unwrap();
             if method_level <= pk_level {
-                return Ok(());
+                return Ok(true);
             }
 
             if min_learn_level == None {
@@ -509,5 +506,5 @@ pub fn is_learnable_move(
         pk_move: String::from(pk_move),
         level: pk_level.to_string(),
         min_level: min_learn_level.unwrap().to_string(),
-    })?
+    })
 }
