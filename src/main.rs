@@ -49,8 +49,8 @@ pub enum Commands {
         sid: Option<usize>,
         #[arg(short, long)]
         gender: Option<String>,
-        #[arg(short, long, alias="ba", default_value = Some("poke"))]
-        ball: Option<String>,
+        #[arg(short, long, alias="ba", default_value = "pokeball")]
+        ball: String,
         #[arg(short, long, alias = "nat")]
         nature: Option<String>,
         #[arg(long)]
