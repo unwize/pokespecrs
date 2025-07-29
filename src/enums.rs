@@ -1,4 +1,5 @@
 use crate::console::err;
+use miette::{miette, Result};
 
 #[derive(Debug, Clone, FromPrimitive, ToPrimitive)]
 pub enum Gender {
@@ -6,6 +7,32 @@ pub enum Gender {
     Female,
     Genderless,
 }
+
+/// A basic string-to-enum conversion
+impl TryFrom<&str> for Gender {
+    type Error = miette::Error;  // Catch-all typing to cover ad-hoc instantiated error via miette macro
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "male" => Ok(Gender::Male),
+            "female" => Ok(Gender::Female),
+            "genderless" => Ok(Gender::Genderless),
+            _ => Err(miette!("'{}' is not a valid pokemon gender!", value)),
+        }
+    }
+}
+
+impl Into<String> for Gender {
+    fn into(self) -> String {
+        match self {
+            Gender::Male => "male".to_string(),
+            Gender::Female => "female".to_string(),
+            Gender::Genderless => "genderless".to_string(),
+        }
+    }
+}
+
+
 
 #[derive(FromPrimitive, ToPrimitive, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Generation {
@@ -20,8 +47,8 @@ pub enum Generation {
     GEN9 = 9,
 }
 
-impl Generation {
-    pub fn to_string(&self) -> String {
+impl Into<String> for Generation {
+    fn into(self) -> String {
         match self {
             Generation::GEN1 => "Gen 1".to_string(),
             Generation::GEN2 => "Gen 2".to_string(),
@@ -34,8 +61,13 @@ impl Generation {
             Generation::GEN9 => "Gen 9".to_string(),
         }
     }
+}
 
-    pub fn from(value: &str) -> Option<Self> {
+impl Generation {
+
+    // Fake `from` function that returns a value, if one matches, from the enum.
+    // I cannot decide if its better to do this or implement a TryFrom with increased complexity of custom error types
+    pub fn parse(value: &str) -> Option<Self> {
         match value {
             "red-blue" => Some(Generation::GEN1),
             "yellow" => Some(Generation::GEN1),

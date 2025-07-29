@@ -9,6 +9,7 @@ use rand::{rng, Rng};
 use rusqlite::fallible_iterator::FallibleIterator;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Formatter};
+use serde_json::to_string;
 
 static STAT_NAMES: [&str; 6] = ["atk", "def", "spatk", "spdef", "spd", "hp"];
 pub static NATURES: [&str; 25] = [
@@ -210,6 +211,7 @@ pub struct PokeSpec {
     nature: String,
     ivs: StatSpread, // Max of 31 per stat, no actual stat total
     evs: StatSpread, // Max of 252 per stat, with a total of 510
+    move_set: HashSet<String>,
 }
 
 impl PokeSpec {
@@ -227,6 +229,7 @@ impl PokeSpec {
         nature: String,
         ivs: StatSpread,
         evs: StatSpread,
+        move_set: HashSet<String>
     ) -> Self {
 
         PokeSpec {
@@ -243,26 +246,34 @@ impl PokeSpec {
             nature,
             ivs,
             evs,
+            move_set,
         }
     }
 }
 
 impl Display for PokeSpec {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let buffer: Vec<String> = vec![
+            self.species.clone(), String::from(" ("), if self.nickname.is_some() { self.nickname.clone().unwrap() } else { self.species.clone() }, String::from("): lvl. "), self.level.to_string(),
+            "\n".to_string(),
+            String::from("\tShiny: "), self.shiny.to_string(),
+            "\n".to_string(),
+            "\tMoves:".to_string(),
+            "\n".to_string(),
+            self.move_set.clone().into_iter().map(|m| String::from("\t\t- ") + m.as_str()).collect::<Vec<String>>().join("\n"),
+            "\n".to_string(),
+            String::from("\tNature: "), self.nature.to_string(),
+            "\n".to_string(),
+            String::from("\tIVs: "), self.ivs.to_string(),
+            "\n".to_string(),
+            String::from("\tEVs: "), self.evs.to_string(),
+            "\n".to_string(),
+
+
+        ];
         write!(
             f,
-            "[{}] ({}), lvl: {} | {} | IVs: {} | EVs: {} | {} |",
-            self.species,
-            if self.nickname.is_some() {
-                self.nickname.clone().unwrap()
-            } else {
-                self.species.clone()
-            },
-            self.level,
-            self.ability,
-            self.ivs,
-            self.evs,
-            self.nature
+            "{}", buffer.join("")
         )
     }
 }
@@ -453,7 +464,8 @@ impl PokeSpecBuilder {
             self.ball.clone(),
             self.nature.clone().unwrap_or(NATURES.get(rng().random_range(0..NATURES.len())).unwrap().to_string()),
             ivs?,
-            evs?
+            evs?,
+            self.move_set.clone(),
         ))
 
 

@@ -46,7 +46,7 @@ pub fn api_get_pokemon_moves(pokemon_json: &serde_json::Value) -> Vec<PokeMove> 
                 method: LearnMethod::from(method["move_learn_method"]["name"].as_str().unwrap())
                     .unwrap(),
                 level_learned_at: Some(method["level_learned_at"].as_u64().unwrap() as u8),
-                generation: Generation::from(
+                generation: Generation::parse(
                     &method["version_group"]["name"]
                         .as_str()
                         .unwrap()

@@ -2,9 +2,10 @@ use crate::cache::{del_cache_on_disk, get_db_connection, is_cache, set_up_db};
 use crate::console::success;
 use crate::spec::PokeSpecBuilder;
 use crate::{CacheCommands, Commands};
-use miette::Result;
+use miette::{IntoDiagnostic, Result};
 use rusqlite::fallible_iterator::FallibleIterator;
 use std::collections::HashSet;
+use crate::enums::Gender;
 
 /// A trait that defines the interface for executing command logic
 pub trait CommandLogic {
@@ -111,9 +112,12 @@ impl CommandLogic for Generate {
                 if nickname.is_some() {
                     spec_builder.nickname(nickname.clone().unwrap().as_str());
                 }
-                spec_builder.ot(ot).tid(tid.unwrap_or(0)).sid(sid.unwrap_or(0));
+                spec_builder.ot(ot).tid(tid.unwrap_or(0)).sid(sid.unwrap_or(0)); // TODO: Implement TID/SID pairing
                 spec_builder.move_set(HashSet::from_iter(moveset.clone()));
                 spec_builder.level(*level).shiny(*shiny).ball(ball.clone().as_str());
+                if gender.is_some() {
+                    spec_builder.gender(Gender::try_from(gender.clone().unwrap().as_str())?);
+                }
 
                 let cache_exists = is_cache();  // Check for cache's existence before opening connection. Creating the conn object automatically initializes db on disk if it doesn't exit.
                 let conn = get_db_connection();

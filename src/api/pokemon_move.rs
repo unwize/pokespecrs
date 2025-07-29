@@ -14,8 +14,8 @@ impl Display for MoveLearnMethod {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{} @lvl: {} ({})",
-            self.generation.to_string(),
+            "{:?} @lvl: {} ({})",
+            self.generation,
             self.level_learned_at.unwrap_or(0),
             self.method.to_string()
         )
