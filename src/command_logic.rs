@@ -1,5 +1,5 @@
-use crate::cache::{del_cache_on_disk, get_db_connection, is_cache, set_up_db};
-use crate::console::success;
+use crate::cache::{del_cache_on_disk, get_db_connection, initialize_cache_data, is_cache, set_up_db};
+use crate::console::{info, success};
 use crate::spec::PokeSpecBuilder;
 use crate::{CacheCommands, Commands};
 use miette::{IntoDiagnostic, Result};
@@ -122,7 +122,9 @@ impl CommandLogic for Generate {
                 let cache_exists = is_cache();  // Check for cache's existence before opening connection. Creating the conn object automatically initializes db on disk if it doesn't exit.
                 let conn = get_db_connection();
                 if !cache_exists {
+                    info("Setting up cache. This will only happen once!");
                     set_up_db(&conn).expect("Unable to set up cache!");
+                    initialize_cache_data(&conn)?;
                 }
                 
                 let spec = spec_builder.build();

@@ -6,10 +6,10 @@ use std::process::exit;
 
 pub mod pokemon_move;
 
-pub fn get_poke_api_route(route: &str) -> serde_json::Value {
+pub fn get_poke_api_route(route: &str, use_base_uri: bool) -> serde_json::Value {
     static BASE_URI: &str = "https://pokeapi.co/api/v2/";
 
-    let req = reqwest::blocking::get(String::from(BASE_URI) + route);
+    let req = reqwest::blocking::get( if use_base_uri {String::from(BASE_URI)} else {String::from("")} + route);
     if req.is_err() {
         err("Failed to communicate with PokeAPI. Do you have an internet connection?");
         exit(-1);
@@ -27,7 +27,7 @@ pub fn get_poke_api_route(route: &str) -> serde_json::Value {
 }
 
 pub fn api_get_pokemon(species: &str) -> serde_json::Value {
-    get_poke_api_route((String::from("pokemon/") + species).as_str())
+    get_poke_api_route((String::from("pokemon/") + species).as_str(), true)
 }
 
 /// For a given Pokemon JSON object, extract a structured list of moves.
@@ -83,11 +83,11 @@ pub fn api_get_pokemon_abilities(pokemon_json: &serde_json::Value) -> Vec<String
 
 pub fn api_get_balls() -> HashSet<String> {
     static BALL_URI: &str = "item-pocket/3/";
-    let response = get_poke_api_route(BALL_URI);
+    let response = get_poke_api_route(BALL_URI, true);
 
     let mut balls: HashSet<String> = HashSet::new();
-    for subroute in response.as_array().unwrap() {
-        let subroute_json = get_poke_api_route(subroute["url"].as_str().unwrap());
+    for subroute in response["categories"].as_array().unwrap() {
+        let subroute_json = get_poke_api_route(subroute["url"].as_str().unwrap(), false);
         for ball in subroute_json["items"].as_array().unwrap() {
             balls.insert(ball["name"].as_str().unwrap().to_string());
         }

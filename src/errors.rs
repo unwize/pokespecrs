@@ -52,6 +52,10 @@ pub(crate) enum SpecErrors {
     #[error("Illegal gender for species {species}: {gender}")]
     #[diagnostic()]
     IllegalGenderError { species: String, gender: String },
+
+    #[error("Unknown type of Pokeball: {ball}")]
+    #[diagnostic()]
+    UnknownBallError {ball: String}
 }
 
 #[derive(Debug, Diagnostic, Error, Clone)]

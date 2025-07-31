@@ -2,7 +2,7 @@ use crate::api::pokemon_move::{MoveLearnMethod, PokeMove};
 use std::collections::HashSet;
 use std::fs::{create_dir_all, remove_file};
 
-use crate::api::{api_get_pokemon, api_get_pokemon_abilities, api_get_pokemon_moves};
+use crate::api::{api_get_balls, api_get_pokemon, api_get_pokemon_abilities, api_get_pokemon_moves};
 use crate::enums::{Generation, LearnMethod};
 use miette::{Error, ErrorHook, IntoDiagnostic, Result};
 use num_traits::{FromPrimitive, ToPrimitive};
@@ -36,8 +36,6 @@ pub fn del_cache_on_disk() {
 /// The cache has a few tables, each of which is centered around the `pokemon` table.
 /// Each related table links key data elements to a specific pokemon via the `species` foreign key.
 pub fn set_up_db(connection: &Connection) -> Result<()> {
-    println!("Initializing cache... This will happen only once!");
-
     connection
         .execute(
             "CREATE TABLE IF NOT EXISTS pokemon (
@@ -298,4 +296,9 @@ pub fn get_and_cache_pokemon(species: &str) -> Result<i32, Error> {
     let pokemon_abilities = api_get_pokemon_abilities(&pokemon_json);
     info("Caching results...");
     cache_entire_pokemon(&conn, &species, &pokemon_moves, &pokemon_abilities)
+}
+
+/// get and cache all misc data that is not linked to a specific pokemon
+pub fn initialize_cache_data(conn: &Connection) -> Result<()> {
+    cache_balls(conn, api_get_balls())
 }

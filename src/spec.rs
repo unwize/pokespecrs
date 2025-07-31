@@ -1,7 +1,7 @@
 use crate::api::pokemon_move::MoveLearnMethod;
-use crate::cache::{fetch_abilities, fetch_move_methods, fetch_species_id, get_and_cache_pokemon, get_db_connection, is_species_cached};
+use crate::cache::{fetch_abilities, fetch_balls, fetch_move_methods, fetch_species_id, get_and_cache_pokemon, get_db_connection, is_species_cached};
 use crate::enums::{Gender, LearnMethod};
-use crate::errors::SpecErrors::{EvSumError, EvValueError, IllegalAbilityError, IvValueError, LevelTooLowMoveError, UnlearnableMoveError};
+use crate::errors::SpecErrors::{EvSumError, EvValueError, IllegalAbilityError, IvValueError, LevelTooLowMoveError, UnknownBallError, UnlearnableMoveError};
 use crate::errors::{SpecError, SpecErrors};
 use crate::util::sample_hash_set;
 use inflector::Inflector;
@@ -435,6 +435,15 @@ impl PokeSpecBuilder {
             } else {
                 println!("{:?}", methods?)
             }
+        }
+
+        let balls = fetch_balls(&conn)?;
+        if !balls.contains(&self.ball.to_lowercase()) {
+            if error.is_none() {
+                error = Some(SpecError {causes: Vec::new()});
+            }
+
+            error = Some(error.unwrap() + UnknownBallError {ball: self.ball.clone()});
         }
 
         // Determine the legality of the provided gender. If no gender was provided, select one randomly

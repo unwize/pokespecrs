@@ -49,7 +49,7 @@ pub enum Commands {
         sid: Option<usize>,
         #[arg(short, long)]
         gender: Option<String>,
-        #[arg(short, long, alias="ba", default_value = "Pokeball")]
+        #[arg(short, long, alias="ba", default_value = "Poke-ball")]
         ball: String,
         #[arg(short, long, alias = "nat")]
         nature: Option<String>,
@@ -102,10 +102,6 @@ enum CacheCommands {
     Check { species: String },
     Purge { species: String },
     Validate {},
-}
-
-fn print_type_of<T>(_: &T) {
-    println!("{}", std::any::type_name::<T>());
 }
 
 fn main() -> Result<()> {
