@@ -4,12 +4,12 @@ use crate::enums::{Gender, LearnMethod};
 use crate::errors::SpecErrors::{EvSumError, EvValueError, IllegalAbilityError, IvValueError, LevelTooLowMoveError, UnlearnableMoveError};
 use crate::errors::{SpecError, SpecErrors};
 use crate::util::sample_hash_set;
+use inflector::Inflector;
 use miette::{Error, Result};
 use rand::{rng, Rng};
 use rusqlite::fallible_iterator::FallibleIterator;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Formatter};
-use serde_json::to_string;
 
 static STAT_NAMES: [&str; 6] = ["atk", "def", "spatk", "spdef", "spd", "hp"];
 pub static NATURES: [&str; 25] = [
@@ -256,11 +256,19 @@ impl Display for PokeSpec {
         let buffer: Vec<String> = vec![
             self.species.clone(), String::from(" ("), if self.nickname.is_some() { self.nickname.clone().unwrap() } else { self.species.clone() }, String::from("): lvl. "), self.level.to_string(),
             "\n".to_string(),
+            String::from("\tot: "), self.ot.to_string(),
+            "\n".to_string(),
+            String::from("\ttid: "), self.tid.to_string(),
+            "\n".to_string(),
+            String::from("\tsid: "), self.sid.to_string(),
+            "\n".to_string(),
             String::from("\tShiny: "), self.shiny.to_string(),
+            "\n".to_string(),
+            String::from("\tball: "), self.ball.to_string().to_title_case(),
             "\n".to_string(),
             "\tMoves:".to_string(),
             "\n".to_string(),
-            self.move_set.clone().into_iter().map(|m| String::from("\t\t- ") + m.as_str()).collect::<Vec<String>>().join("\n"),
+            self.move_set.clone().into_iter().map(|m| String::from("\t\t- ") + m.to_title_case().as_str()).collect::<Vec<String>>().join("\n"),
             "\n".to_string(),
             String::from("\tNature: "), self.nature.to_string(),
             "\n".to_string(),
